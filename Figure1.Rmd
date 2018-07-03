@@ -1,0 +1,486 @@
+---
+title: "R Notebook"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+```{r setup}
+library(tidyverse)
+library(scales)
+library(forcats)
+library(gridExtra)
+set.seed(1014)
+options(digits = 3)
+
+knitr::opts_chunk$set(
+  comment = "#>",
+  collapse = TRUE,
+  cache = TRUE,
+  out.width = "70%",
+  fig.align = 'center',
+  fig.width = 6,
+  fig.asp = 0.618,  # 1 / phi
+  fig.show = "hold",
+  dev = c("pdf", "png")
+)
+
+lappend <- function(lst, obj) {
+  lst[[length(lst)+1]] <- obj
+  return(lst)
+}
+
+fun_name = "figure1"
+output_dir = "./files"
+dir.create(output_dir, showWarnings = FALSE)
+
+options(dplyr.print_min = 6, dplyr.print_max = 6)
+
+```
+
+```{r figure_data}
+load("../../R/objects/proteins.matrix.sva.0.5.1.RData")
+load("../../R/objects/proteins.matrix.sva.0.5.1.FC.RData")
+load("../../R/objects/iMM904._load_.RData")
+load("../../R/objects/exp_metadata._clean_.RData")
+
+protein.matrix <- proteins.matrix.sva.0.5.1
+proteins.FC <- proteins.matrix.sva.0.5.1.FC
+
+iMM904[] <- lapply(iMM904, as.character)
+
+```
+
+
+```{r technicalCV}
+
+data.raw = protein.matrix
+
+data.raw = as.tibble(data.frame(ORF = row.names(data.raw), tbl_df(data.raw), stringsAsFactors = F))
+data.long <- data.raw %>% gather(sample, value, -ORF) %>%
+  mutate(signal = exp(value),
+         type = ifelse(grepl(pattern = "mix", ignore.case = T, x = sample), 1, 0))
+
+data.long.summary = data.long %>% group_by(ORF, type) %>% dplyr::summarise(CV = sd(signal, na.rm=T)/mean(signal, na.rm=T))
+
+data.long %>%  distinct(type, sample) %>% group_by(type) %>%
+  summarise(n = n())
+
+toPlot <- data.long.summary %>% filter(ORF %in% iMM904$gene) %>% arrange(type, CV) %>% 
+  group_by(type) %>% 
+  mutate(rank = rank(-CV),
+         cumsum_CV = cumsum(CV),
+         frac_CV = cumsum_CV/sum(CV))
+toPlot %>%  
+  ggplot(aes(x = CV, y = frac_CV)) +
+    geom_point(aes(colour = factor(type))) +
+    scale_color_discrete(name="",
+                         breaks=c(1, 0),
+                         labels=c("33 entire experiment technical QC samples", 
+                                  "364 kinase samples")) +
+    theme_bw() +
+    theme(legend.position = c(0.8,0.25), aspect.ratio = 1) +
+    xlab("Coefficient of variation of proteins of entire dataset") +
+    ylab("Cummulative percentage, %")  +
+    scale_y_continuous(labels = scales::percent) +
+    scale_x_continuous(labels = scales::percent)
+```
+
+
+```{r kegg_coverages}
+
+
+load("../../R/objects/KEGG.pathways.analysis1.RData")
+load("../../R/objects/kegg_categories._load_.RData")
+
+KEGG.pathways.stats <- KEGG.pathways %>%
+  group_by(pathway) %>% 
+  summarize(EC.coverage  = length(unique(EC.number[is.inData == 1]))/length(unique(EC.number)),
+            ORF.coverage = length(unique(ORF[is.inData == 1]))/length(unique(ORF)),
+            EC.active  = length(unique(EC.number[is.Coupled == 1 ]))/length(unique(EC.number)),
+            ORF.active = length(unique(ORF[is.Coupled == 1 ]))/length(unique(ORF)),
+            EC.active.inData  = length(unique(EC.number[is.Coupled == 1 & is.inData == 1 ]))/length(unique(EC.number[is.Coupled == 1])))
+
+
+KEGG.pathways.stats = left_join(KEGG.pathways.stats, kegg_categories, by="pathway")
+
+selected = c("Amino acid metabolism",                       
+             "Carbohydrate metabolism",                                          
+             "Energy metabolism",                                      
+             "Glycan biosynthesis and metabolism",                                    
+             "Metabolism of cofactors and vitamins",       
+             "Metabolism of other amino acids",                
+             "Nucleotide metabolism",                                                         
+             "Metabolism of terpenoids and polyketides",
+             "Biosynthesis of other secondary metabolites",
+             "Lipid metabolism")
+
+#KEGG.pathways.f <- KEGG.pathways %>% filter(B %in% selected)
+
+KEGG.pathways.stats.f  <- KEGG.pathways.stats %>% filter(B %in% selected)
+
+KEGG.pathways.stats.f.long = KEGG.pathways.stats.f %>% 
+  gather(stats, coverage, -pathway, -A, -B, -C)
+
+
+toPlot = KEGG.pathways.stats.f.long %>% 
+  filter(stats %in% c( "EC.active.inData", "EC.coverage")) %>%
+  group_by(B, stats) %>%
+  summarise(avg = mean(coverage, na.rm=T)) %>%
+  ungroup() %>%
+  arrange(avg)
+
+arrange_vector = unique(as.character((toPlot %>% arrange(avg))$B))
+
+toPlot <- toPlot %>% mutate(B =  fct_relevel(B, levels = arrange_vector))
+toPlot <- toPlot %>% mutate(stats = fct_relevel(stats, rev(c("EC.active.inData", "EC.coverage"))))
+
+
+ggplot(toPlot, aes(x=B, y=avg, fill=stats)) +
+  geom_bar(stat="identity", position = "dodge") +
+  scale_y_continuous(breaks = seq(0,1,0.2),labels = percent_format(), limits = c(0,1)) +
+  xlab("") +
+  ylab("Average coverage by metabolism part") +
+  coord_flip() +
+  scale_fill_grey(start = 0.8, 
+                  end = 0.2,
+                  name = "",
+                  breaks = c("EC.active.inData", "EC.coverage"),
+                  labels = c( "Active reactions", "All reactions")) +
+  theme_bw() +
+  theme(legend.position = c(.66, 0.15)) 
+
+
+```
+```{r pack_man}
+coverage_thr <- 0.1 # pathway considered present if at least 10% covered
+
+toPlot <- KEGG.pathways.stats.f %>% 
+  dplyr::select(A, EC.coverage, EC.active.inData) %>%
+  gather(stats, coverage, -A) %>%
+  group_by(stats) %>%
+  summarise(MEAN_coverage = mean(coverage, na.rm = T))
+
+toPlot$stats = factor(toPlot$stats, levels = c("EC.active.inData", "EC.coverage"))
+
+toPlot2 <- KEGG.pathways.stats.f %>% 
+  group_by(A) %>%
+  summarise(pathways_coverage = sum(EC.coverage > coverage_thr, na.rm = T)/length(EC.coverage))
+
+toPlot <- bind_rows(toPlot, rename(toPlot2, stats = A, MEAN_coverage = pathways_coverage))
+toPlot <- toPlot %>% mutate(non_coverered = 1 - MEAN_coverage)
+toPlot <- reshape2::melt(toPlot, id.vars = c("stats"))
+toPlot <- toPlot %>% mutate( stats = fct_relevel(stats, levels = as.character((toPlot %>% filter(variable  == "MEAN_coverage") %>% 
+                                                                arrange(value) %>% dplyr::select(stats))[,1])))
+
+ggplot(toPlot, aes(x=stats, y=value, fill = variable)) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar(theta = "y", start = pi/2 ) +
+  scale_y_continuous(breaks = seq(0,1,0.25),labels = percent_format(), limits = c(0,1)) +
+  theme_bw() +
+  theme(legend.justification=c(1,0), 
+        legend.position="none",
+        legend.key.size	=  unit(0.25, "cm"))+
+  xlab("") +
+  ylab("")
+
+```
+```{r volcano}
+
+
+rowFolds = function(data, groups, reference) {
+  
+  ref_ind = which(groups == reference)
+  
+  if (length(ref_ind) == 0 ) {
+    stop(paste("No such reference:", reference))
+  }
+  
+  stopifnot(length(unique(groups)) >=2)  
+    
+  tmp_mat=data.frame(zero = rep(0,nrow(data)))
+  ref_row = rowMeans(data[,ref_ind],na.rm=T)
+  
+  for (i in levels(groups)) {
+    if (i == reference) {
+      next
+    }
+    
+    condition_index = which(groups == i)
+    ret=c()
+    if (length(condition_index) == 1 ){
+      ret = data[,condition_index]/ref_row
+    } else {
+      ret = rowMeans(data[,condition_index],na.rm=T)/ref_row  
+    }
+    tmp_mat = cbind(tmp_mat,ret)  
+  }
+  tmp_mat$zero = NULL
+  colnames(tmp_mat) = levels(groups)[levels(groups) != reference]
+  
+  return(tmp_mat)  
+}
+
+
+getFC_thr = function(proteins.matrix, pval_thr = 0.01) {
+    
+#   load("./R/objects/proteins.matrix.combat.RData")
+#   proteins.matrix = proteins.matrix.combat
+#   pval_thr = 0.01
+#   
+  #checking WT samples to define FC
+  exp_metadata$aquisition_date.str = as.POSIXct(strftime(exp_metadata$aquisition_date, format="%Y-%m-%d %H:%M:%S"))
+  cl = cluster::pam(exp_metadata$aquisition_date.str, 7)
+  exp_metadata$batch_kmeans = cl$clustering
+  
+  pheno_wt = as.data.frame(exp_metadata[match(colnames(proteins.matrix), exp_metadata$sample_name),])
+  pheno_wt = pheno_wt[pheno_wt$type == "Standard Mix",]
+  pheno_wt = pheno_wt[pheno_wt$batch_kmeans %in% names(table(pheno_wt$batch_kmeans))[table(pheno_wt$batch_kmeans)  >= 3],]
+  
+ 
+  proteins.matrix.WT = proteins.matrix[,match(pheno_wt$sample_name, colnames(proteins.matrix))]
+  
+  #   s = prcomp(t(proteins.matrix.WT))
+  #   plot(s$x[,c(1,2)], col=pheno_wt$batch_kmeans)
+  
+  pheno_wt$factor = factor(paste(pheno_wt$ORF, pheno_wt$batch_kmeans, sep="."))
+  
+  X = model.matrix(~factor + 0, data=pheno_wt)
+  colnames(X) = levels(pheno_wt$factor)
+  
+  tbl.tmp = table(pheno_wt$factor)
+  reference = names(tbl.tmp)[tbl.tmp == max(tbl.tmp)][1]
+  
+  matrix = proteins.matrix.WT
+
+  lm.fit_model = limma::lmFit(matrix, X)
+  ph = unique(as.character(pheno_wt$factor))
+  contrasts = paste0( ph[ph !=reference] ,"-", reference)  
+  
+  mc = limma::makeContrasts(contrasts=contrasts, levels=X)    
+  c.fit = limma::contrasts.fit(lm.fit_model, mc)
+  eb = limma::eBayes(c.fit)
+  
+  folds = rowFolds(data=exp(matrix), groups=pheno_wt$factor, reference=reference)
+  folds = log(folds, 2)
+  
+  folds_tmp = reshape2::melt(eb$coefficients, id.vars="row.names")
+  #folds_tmp$contrasts = factor(paste(folds_tmp$contrasts, "-", reference, sep=""))
+  pvals_tmp = reshape2::melt(eb$p.value, id.vars="row.names")
+  
+  names(folds_tmp) = c("ORF", "contrasts", "logFC")
+  names(pvals_tmp) = c("ORF", "contrasts", "p.value")
+  
+  folds_tmp$contrasts = factor(folds_tmp$contrasts)
+  pvals_tmp$contrasts = factor(pvals_tmp$contrasts)
+  
+  proteins.FC = merge(folds_tmp, pvals_tmp, all=T,
+                      by=c("ORF", "contrasts"))
+  
+  
+  ##multiple testing correction
+  proteins.FC$p.value_BH = p.adjust(proteins.FC$p.value, method="BH")
+  proteins.FC$p.value_bonferroni = p.adjust(proteins.FC$p.value, method="bonferroni")
+  
+  proteins.FC$KO = sub(x = proteins.FC$contrasts, pattern=paste("(.*?)-", reference, sep=""), replacement="\\1")
+  proteins.FC$reference = reference
+  
+  proteins.FC_MIX <<- proteins.FC
+  data = abs(proteins.FC$logFC[proteins.FC$p.value_BH < pval_thr])
+  fc_thr = median(data)
+  # file_name = paste(fun_name, "getFC_thr", "pdf", sep=".")
+  # file_path = paste(figures_dir, file_name, sep="/")
+  # 
+  # pdf(file_path, paper="a4")
+  # par(pty="s")
+  # hist(data, breaks=50, main="Expected fold changes in Standatd Mix")
+  # fc_thr = median(data)
+  # 
+  # abline(v=fc_thr, lty=2)
+  # legend("topleft", bg=NULL, bty="n", 
+  #        legend=paste("Median FC=", round(fc_thr,2)))
+  # dev.off()
+  
+  return(abs(fc_thr))
+}
+
+
+
+reference = unique(as.character(proteins.FC$reference))
+proteins.FC.f <- proteins.FC %>% 
+  filter(KO %in% unique(exp_metadata$ORF[exp_metadata$type == "Kinase"])) %>%
+  mutate(isiMM904 = ORF %in% unique(as.character(iMM904$gene)))
+
+pval_thr = 0.01
+
+FC_thr = getFC_thr(proteins.matrix=protein.matrix, pval_thr=pval_thr)
+
+
+p.volcano <- proteins.FC.f %>% 
+  filter(isiMM904 == T) %>%
+  mutate(sign = ifelse(abs(logFC) >= FC_thr & p.value_BH < pval_thr, 1,0)) %>%
+  ggplot(aes(y=-log10(p.value_BH), x=logFC)) +
+  geom_point(aes(color = sign), alpha=0.5) + 
+  xlim(c(-4,4)) +
+  geom_hline(yintercept = -log(pval_thr,10),linetype=3) +
+  geom_vline(xintercept = c(FC_thr,-FC_thr),linetype=3) +
+  xlab("Protein expression change in mutant, log2(fold-change)") +
+  theme_bw() +
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        aspect.ratio = 1,
+        legend.position = "none")
+
+p.inset <- proteins.FC.f %>% 
+  filter(isiMM904 == T) %>%
+  ggplot( aes(x=logFC)) +
+  geom_histogram(colour = "white", fill = "black", binwidth = 0.25) +
+  xlab(paste("Log2(fold-change)")) +
+  xlim(c(-2,2)) +
+  theme_bw() +
+  theme(aspect.ratio = 1)
+
+grid.arrange(p.volcano, p.inset, ncol=2)
+
+
+```
+
+```{r fraction}
+
+proteins.FC.f.stats <- proteins.FC.f %>% 
+  group_by(KO) %>%
+  filter(abs(logFC) >= FC_thr, p.value_BH < pval_thr) %>% 
+  summarize(n_yeast  = sum(isiMM904),
+            n_total = n()) %>%
+            mutate(n_yeast_fraction = n_yeast/n_total)
+
+proteins.FC.f.stats  %>%
+ ggplot(aes(x = n_total, y = n_yeast_fraction)) +
+  geom_point() +
+  geom_smooth(method = "loess", se = F) +
+  xlab("Number of proteins changes per mutant") +
+  ylab("Fraction of metabolic enzymes affected by kinase") +
+  theme_bw() +
+  theme(aspect.ratio = 1 - 1/3.14)
+
+
+all_measured_enzymes <- as.vector((proteins.FC.f %>% filter(isiMM904 ==T ) %>% dplyr::select(ORF) %>% distinct())$ORF)
+
+proteins.FC.f.stats %>% 
+  ggplot(aes(x = n_yeast/length(all_measured_enzymes))) +
+  geom_histogram(colour = "white", fill = "black", binwidth = 0.05) +
+  xlab(paste("Fraction of perturbed metabolic network per kinase mutant")) +
+  theme_bw() +
+  theme(aspect.ratio = 1)
+
+
+```
+
+
+```{r tr_vs_pr}
+# load("./R/objects/proteins.matrix.combat.quant.FC.RData")
+load("../../R/objects/transcriptome.FC._clean_.RData")
+load("../../R/objects/orf2ko._load_.RData")
+load("../../R/objects/orf2name._clean_.RData")
+
+#transcriptome.FC$KO = NULL
+transcriptome.FC <- transcriptome.FC %>% dplyr::select(c("ORF", "logFC", "p.value", "p.value_BH", "KO.ORF"))
+transcriptome.FC <- transcriptome.FC %>% dplyr::rename(KO = KO.ORF)
+
+transcriptome.FC <- transcriptome.FC %>% mutate(isiMM904 = ORF %in% iMM904$gene)
+transcriptome.FC.f = transcriptome.FC %>% filter(KO %in% unique(as.character(exp_metadata$ORF[exp_metadata$type == "Kinase"])))
+
+
+proteins.FC = proteins.matrix.sva.0.5.1.FC
+tr.pr.FC = merge(transcriptome.FC, proteins.FC, by=c("KO", "ORF"), suffixes=c(".tr", ".pr"))
+
+#pval_thr = 0.01
+
+tr.pr.cor.KO = tr.pr.FC %>% group_by(KO, isiMM904) %>% 
+  summarise(cor = cor(logFC.tr, logFC.pr, method="pearson"))
+
+tr.pr.cor.KO %>% filter(isiMM904) %>%
+ggplot(aes(x = cor)) +
+  geom_histogram(colour = "white", fill = "black", binwidth = 0.05) +
+  geom_vline(aes(xintercept = median(cor)), col="red", linetype = 2) +
+  xlab(expression(paste("Pearson correlation between gene and protein expression changes, ", r))) +
+  theme_bw() +
+  theme(aspect.ratio = 1)
+
+```
+```{r absolute perturbations}
+
+load(file = "../../R/objects/absolute_dataset._clean_.RData")
+
+absolute_dataset <- absolute_dataset %>% mutate(isiMM904 = ORF %in% iMM904$gene)
+
+absolute_dataset.stats <- absolute_dataset %>% 
+  group_by(dataset, isiMM904) %>%
+    summarize(n = n(), 
+              perturbation = sum(abundance)) %>%
+  group_by(dataset) %>%
+    mutate(total_perturbation = sum(perturbation)) %>%
+  group_by(dataset, isiMM904) %>%
+    mutate(perturbation_fr = perturbation/total_perturbation)
+
+absolute_dataset.f <- absolute_dataset %>% filter(dataset == "Kulak")
+
+
+abs_changes <- proteins.FC.f %>% 
+  left_join(absolute_dataset.f, by = c("ORF", "isiMM904")) %>%
+  mutate(absolute_change = ifelse(p.value_BH < pval_thr, abundance * (2^logFC), abundance),
+         percent_change = (absolute_change - abundance)/abundance) %>% 
+  group_by(KO) %>%
+  summarise(change = (sum(absolute_change, na.rm = T) - sum(abundance, na.rm=T))/sum(abundance, na.rm=T),
+            median_change = median(abs(percent_change), na.rm=T),
+            mean_change = mean(abs(percent_change), na.rm=T),
+            max_change = max(abs(percent_change), na.rm=T))
+
+# measured_enzymes = rownames(protein.matrix[rownames(protein.matrix) %in% iMM904$gene,])
+# 
+# WT_abundance = absolute_dataset.f %>% 
+#   filter(ORF %in% measured_enzymes) %>% 
+#   summarise(measured_enzyme_abundance = sum(abundance, na.rm = T))
+
+
+abs_changes <- abs_changes %>% mutate(label = as.character(exp_metadata$gene[match(KO, exp_metadata$ORF)]))
+
+
+counts <- proteins.FC.f %>%
+            mutate(sign = ifelse(abs(logFC) >= FC_thr & p.value_BH < pval_thr, 1, 0),
+                   label = orf2name$gene_name[match(KO, orf2name$ORF)])
+counts.stats <- counts %>%
+  filter(isiMM904) %>% 
+  group_by(label) %>%
+  summarize(n = sum(sign)) %>% 
+  ungroup() %>% 
+  arrange(-n)
+
+counts.stats$label = factor(counts.stats$label, levels = as.character(counts.stats$label))
+
+toPlot <- full_join(counts.stats, abs_changes)
+toPlot$change_percent <- toPlot$change*100
+toPlot <- toPlot %>% arrange(-n)
+toPlot$label = factor(toPlot$label, levels = as.character(toPlot$label))
+
+p.absolute <- ggplot(toPlot, aes(x=label, y=n)) + 
+  geom_bar(stat="identity", width=.5, color = "lightgrey") +
+  geom_line(data=toPlot, aes(x = label, y = change_percent, group=1), colour = "red") +
+  geom_text(data=data.frame(), 
+            aes(x=toPlot$label[which.max(toPlot$change_percent)], 
+                y = toPlot$change_percent[which.max(toPlot$change_percent)], 
+                label = round(toPlot$change_percent[which.max(toPlot$change_percent)],3))) +
+  geom_text(data=data.frame(), 
+            aes(x=toPlot$label[which.min(toPlot$change_percent)], 
+                y = toPlot$change_percent[which.min(toPlot$change_percent)], 
+                label = round(toPlot$change_percent[which.min(toPlot$change_percent)],3))) +
+  ylab("Number of perturbed metabolic enzymes") +
+  xlab("Kinase mutant") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, face = "italic"), aspect.ratio = 5/8)
+
+```
+
+
