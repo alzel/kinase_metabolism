@@ -1,0 +1,531 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+
+```{r setup}
+
+
+library(tidyverse)
+library(scales)
+library(forcats)
+library(gridExtra)
+set.seed(1014)
+options(digits = 3)
+
+knitr::opts_chunk$set(
+comment = "#>",
+collapse = TRUE,
+cache = TRUE,
+out.width = "70%",
+fig.align = 'center',
+fig.width = 6,
+fig.asp = 0.618,
+# 1 / phi
+fig.show = "hold",
+dev = c("pdf", "png")
+)
+
+lappend <- function(lst, obj) {
+lst[[length(lst) + 1]] <- obj
+return(lst)
+}
+
+fun_name = "figure4"
+output_dir = "./files"
+dir.create(output_dir, showWarnings = FALSE)
+
+options(dplyr.print_min = 6, dplyr.print_max = 6)
+
+```
+
+
+
+
+
+```{r figure_data}
+load("../../R/objects/iMM904._load_.RData")
+load("../../R/objects/exp_metadata._clean_.RData")
+load("../../R/objects/orf2name._clean_.RData")
+load("../../R/objects/metabolite2iMM904._load_.RData")
+load("../../R/objects/gene.annotations._load_.RData")
+
+iMM904[] <- lapply(iMM904, as.character)
+
+```
+
+
+
+```{r predictors_mlr, fig.width=15, fig.asp=1.44}
+
+
+input_path = "../2016-02-24/linear_models"
+
+
+filesToProcess = dir(path=input_path, pattern = "[123].[01]+.linear_models.RData$", recursive=F)
+filesToProcess = grep(pattern="imputed", invert=T, filesToProcess, value=T)
+filesToProcess = grep(pattern="([1,3]+).([0-9]+).linear_models.RData", filesToProcess, value=T)
+
+pattern.p = "data.(\\w+).(.*?).([0-9]+).([0-9]+).linear_models.RData$"
+
+
+# filesToProcess = dir(path=input_path, pattern = "[123].[01]+.linear_models.RData$", recursive=F)
+# filesToProcess = grep(pattern="imputed", invert=T, filesToProcess, value=T)
+# filesToProcess = grep(pattern="([1,3]+).([0-9]+).linear_models.RData", filesToProcess, value=T)
+
+
+pattern.p = "data.(\\w+).(.*?).([0-9]+).([0-9]+).linear_models.RData$"
+matches = stringr::str_match_all(pattern=pattern.p, filesToProcess)
+
+
+metabolite.order <- read_delim("../../data/2015-10-16/metabolites.txt", delim = "\t")
+metabolite.order = metabolite.order[with(metabolite.order,order(desc(method),pathway,Order, met_name)),]
+
+
+read_models.models = function(x) {
+  z <<- x
+  x = z
+  file_name = paste(input_path,x[[1]], sep="/") 
+  my_models = get(load(file_name))
+  
+  models = my_models$models
+  tmp = data.frame()
+  for (i in 1:length(models)) {
+    for (j in c("before", "after")) {
+      coefficients1 = models[[i]][[j]]$coefficients[-1]
+      if(any(grepl(x = names(coefficients1), pattern = "PC\\d+"))) {
+        tmp_d = my_models$trans.x$rotation %>% reshape2::melt(id.vars = rownames()) %>%
+          filter(Var2 %in% names(coefficients1)) %>% arrange(Var2, -abs(value)) %>% group_by(Var2) %>% filter(row_number() <= 2) %>% #number of loadings per component
+          left_join(coefficients1 %>% reshape2::melt(id.vars = names()) %>% mutate(component = names(coefficients1)),
+                    by = c("Var2" = "component")) %>%
+          group_by(Var1) %>%
+          dplyr::summarize(coefficient = value.y[which.max(abs(value.y))])
+
+          coefficients1 = tmp_d$coefficient
+          names(coefficients1) = tmp_d$Var1
+      }
+    
+    tmp = rbind(tmp, data.frame(model = i, type = j, coefficients = coefficients1, variables =  names(coefficients1)))
+    tmp = rbind(tmp, data.frame(model = i, type = j, coefficients = NA, variables = "stats"))
+      
+    }
+  }
+    
+  table = tmp
+  
+  table$dataset = factor(x[[2]])
+  table$species  = factor(x[[3]])
+  table$isImputed = ifelse(length(grep(pattern="imputed", x=x[[3]])) == 0, 0, 1)
+  table$degree  = factor(x[[4]])
+  table$ismetIncluded  = factor(x[[5]])
+  table$file =  factor(x[[1]])
+  table = merge(table,  my_models$summaries, by = c("model", "type"))
+  
+  annotations = my_models$summaries %>% dplyr::select(model, type, adj.r.squared)
+  colnames(annotations)[3] = "stats_text"
+  
+  annotations$variables  = "stats"
+  table = merge(table, annotations, by = c("model", "type", "variables"), all=T)
+  return(table)
+}
+
+file.list = lapply(matches, FUN=read_models.models)
+all_final_models.models <- bind_rows(file.list)
+
+
+auto_thr = 0.05
+auto_thr.bonferonni = auto_thr/length(unique(all_final_models.models$formula))
+
+all_final_models.models <- all_final_models.models %>% 
+                            mutate(metabolite = species,
+                                   metabolite = str_replace(metabolite, pattern="log.quant.(.*)", replacement="\\1"),
+                                   metabolite = str_replace(metabolite, pattern="log.(.*)", replacement="\\1"),
+                                   normalization = ifelse(str_detect(string = species, pattern = "log"), 
+                                                          ifelse(str_detect(string = species, pattern = "log.quant"), "log.quant", "log"),
+                                                          "bc"),
+                                   isAutocorrelation.bonferoni = ifelse(bg.p.value < auto_thr.bonferonni, 1, 0),
+                                   isAutocorrelation = ifelse(bg.p.value < auto_thr, 1, 0),
+                                   mode = ifelse(coefficients > 0,1,0))
+
+
+#all_final_models.models %>% filter(degree == 1, metabolite == "ATP") %>% View
+
+#selecting best representative model based on adj R2 out of all normalization methods
+all_final_models.models <- all_final_models.models %>% 
+  dplyr::filter(type == "after", 
+                isImputed == 0, isAutocorrelation.bonferoni == 0) %>%
+  group_by(dataset, model, metabolite, ismetIncluded, degree) %>% 
+  dplyr::mutate(the_best = adj.r.squared == max(adj.r.squared)) %>% # best among normalization methods
+  group_by(dataset, metabolite, ismetIncluded, degree) %>% 
+  dplyr::mutate(the_super_best = adj.r.squared == max(adj.r.squared)) #the best model
+
+all_final_models.models = all_final_models.models %>% mutate(varname = orf2name$gene_name[match(variables, orf2name$ORF)]) 
+                               
+
+all_final_models.models$varname[which(is.na(all_final_models.models$varname))] = as.character(all_final_models.models$variables[is.na(all_final_models.models$varname)])
+
+#tmp.lev = unique(sort(all_final_models.models$varname))
+#all_final_models.models$varname = factor(all_final_models.models$varname, levels=c("stats", tmp.lev[tmp.lev != "stats"]))
+
+all_final_models.models = all_final_models.models %>% mutate(metabolite.label = metabolite2iMM904$official_name[match(metabolite, metabolite2iMM904$id)])
+
+
+selected_models  = dplyr::filter(all_final_models.models, type == "after", 
+                        metabolite %in% metabolite.order$metabolite, 
+                        adj.r.squared > 0.25, the_best == T, degree == 1)
+
+
+ggplot() +
+  geom_text(data=selected_models, aes(x=factor(model), y = varname, label=round(stats_text,2))) +
+  geom_point(data=selected_models, aes(x=factor(model), y = varname, 
+                              size=abs(coefficients), color = factor(mode))) +
+  facet_wrap(dataset~metabolite.label, scales="free", ncol=5) +
+  xlab("Candidate model") + 
+  ylab("Enzyme predictors") +
+  theme_bw() + 
+  theme(aspect.ratio = 1, legend.position = "bottom") +
+  scale_size_continuous(name="Effect size",
+                        breaks=c(0.25, 0.5, 1),
+                        labels = c("low", "medium", "strong")) +
+  scale_color_discrete(name="Predictor's effect",
+                       breaks = c(0, 1),
+                       labels = c("negative", "positive") )
+
+```
+
+```{r}
+
+all_linear_models <- all_final_models.models %>% 
+  filter(type == "after",  
+        isImputed == 0 , isAutocorrelation.bonferoni == 0) %>%
+      group_by(metabolite, ismetIncluded, degree) %>% 
+        mutate(the_super_best = adj.r.squared == max(adj.r.squared)) #the best model
+
+
+metabolite.order = metabolite.order[with(metabolite.order,order(desc(method),pathway,Order, met_name)),]
+
+toPlot = all_linear_models %>% ungroup() %>% 
+  filter(metabolite %in% metabolite.order$metabolite, 
+         degree== 1, ismetIncluded == 0, the_super_best == T, isImputed == 0 , isAutocorrelation.bonferoni == 0) %>% 
+  distinct(metabolite, adj.r.squared)
+            
+
+toPlot <- toPlot %>% mutate(met_name = metabolite.order$met_name[match(metabolite, metabolite.order$metabolite)],
+                            met_name = fct_relevel(met_name, levels=as.character(metabolite.order$met_name)),
+                            pathway = metabolite.order$pathway[match(metabolite, metabolite.order$metabolite)],
+                            pathway = fct_relevel(pathway,levels = unique(as.character(metabolite.order$pathway))))
+
+library(ggthemes)
+toPlot %>%
+  ggplot(aes(x = met_name, color=pathway)) +
+    geom_linerange(data = toPlot , aes(ymin=0, ymax=adj.r.squared),size=3) +
+    scale_colour_tableau("tableau20") +
+    coord_flip() +
+    theme_bw() + 
+    theme(legend.justification=c(1,0), 
+          legend.position=c(-0.1,0),
+          panel.grid = element_blank()) +
+    ylab("Explained variance of metabolite concentrations\nusing proteome data, adj. R2")
+
+```
+
+```{r}
+
+met = c("ATP", "ADP", "AMP", "glutamine")
+
+example.models = all_linear_models %>% ungroup() %>% filter(degree == 1, ismetIncluded == 0, the_super_best == T, metabolite %in% met) %>% 
+  group_by(metabolite) %>% summarize(model = model[1],
+                                     type = type[1],
+                                     file = file[1],
+                                     adj.r.squared = adj.r.squared[1],
+                                     median.cv.r2 =  median.cv.r2[1])
+
+tmp.list = list()
+for(i in 1:nrow(example.models)) {
+  tmp.list[[i]] = matrix(t(example.models[i,]), nrow=1)
+}
+
+
+
+
+read_models = function(x) {
+  #x = tmp.list[[1]]
+  file_name = paste(input_path,x[[4]], sep="/") 
+  my_models = get(load(file_name))
+  
+  models = my_models$models
+  
+  fit = models[[as.numeric(x[[2]])]][[x[[3]]]]
+  
+  yhat = predict(fit, fit$model[,-1])
+  
+  table = data.frame(metabolite = x[[1]],
+                     model = x[[2]],
+                     type = x[[3]],
+                     file = x[[4]],
+                     y = fit$model[,1],
+                     yhat = yhat,
+                     adj.r.squared = x[[5]],
+                     median.cv.r2 =  x[[6]],
+                     predictors = paste(names(coefficients(fit)[-1]), collapse = ":"),
+                     coefficients = paste(coefficients(fit)[-1], collapse = ":"),
+                     sample_name = rownames(fit$model))
+  return(table)
+}
+
+read_predictions = function(x) {
+  #x = tmp.list[[2]]
+  file_name = paste(input_path,x[[4]], sep="/") 
+  my_models = get(load(file_name))
+  
+  models = my_models$models
+  
+  fit = models[[as.numeric(x[[2]])]][[x[[3]]]]
+  
+  M = cor(fit$model[,-1])
+  L = chol(M)
+  nvars = dim(L)[1]
+  n_obs = 1000
+  
+  r = t(L) %*% matrix(rnorm(nvars*n_obs, mean = 0, sd = 1), nrow=nvars, ncol=n_obs)
+  r = as.data.frame(t(r))
+  names(r) <- names(fit$model[,-1])
+  
+  #yhat_real = predict(fit, fit$model[,-1])
+  
+  yhat = predict(fit, r)
+  conf = predict(fit, r, interval = "confidence", level = 0.95)
+  pred = predict(fit, r, interval = "prediction", level = 0.95)
+  
+  pred.int <- as.data.frame(cbind(yhat,pred))
+  conf.int <- as.data.frame(cbind(yhat,conf))
+  
+#    g.pred <- ggplot(pred.int, aes(x = yhat, y = fit)) +
+#     theme_bw() +
+#     ggtitle("Prediction interval for future observations from predict()") +
+#     geom_point(data = xy, aes(x = x, y = y)) +
+#     geom_smooth(data = pred.int, aes(ymin = lwr, ymax = upr), stat = "identity") 
+#     #geom_smooth(data = conf.int, aes(ymin = lwr, ymax = upr), stat = "identity", fill="red")
+
+  
+   table = data.frame(metabolite = x[[1]],
+                     model = x[[2]],
+                     type = x[[3]],
+                     file = x[[4]],
+                     yhat = yhat,
+                     conf.lwr = conf.int$lwr,
+                     conf.upr = conf.int$upr,
+                     pred.lwr = pred.int$lwr,
+                     pred.upr = pred.int$upr,
+                     adj.r.squared = x[[5]],
+                     median.cv.r2 =  x[[6]] )
+  return(table)
+}
+
+
+prediction.list = lapply(tmp.list, FUN=read_models)
+prediction.models = do.call(rbind.data.frame, prediction.list)
+
+prediction.models <- prediction.models %>% group_by(metabolite) %>% arrange(y)
+prediction.models$gene = exp_metadata$gene[match(prediction.models$sample_name, exp_metadata$ORF)]
+
+
+prediction.models <- prediction.models %>% 
+  group_by(metabolite) %>% 
+  mutate(ntile20 = ntile(yhat, 20))
+
+simulations.list = lapply(tmp.list, FUN=read_predictions)
+prediction.intervals = do.call(rbind.data.frame, simulations.list)
+
+
+toPlot = prediction.models
+stats.text = prediction.models %>% group_by(metabolite, model) %>% summarise(adj.r.squared = as.numeric(as.character(adj.r.squared[1])),
+                                                                             median.cv.r2 = as.numeric(as.character(median.cv.r2[1])))
+stats.text$x = -1
+stats.text$y = seq(2,1,length.out=nrow(stats.text))
+#toPlot$metabolite = factor(toPlot$metabolite, levels = c("ATP", "ADP", "AMP"))
+
+toPlot$metabolite = factor(toPlot$metabolite, levels = c("ATP", "ADP", "AMP", "glutamine"))
+prediction.intervals$metabolite = factor(prediction.intervals$metabolite, levels = c("ATP", "ADP", "AMP", "glutamine"))
+
+ggplot(prediction.intervals)+
+  geom_point(data = toPlot, aes(x = yhat, y = y) ) +
+  geom_text(data=stats.text, aes(x=x,y=y,label=round(adj.r.squared,2)))+
+  facet_wrap(~metabolite, nrow = 1, scale="free") +
+  ylim(c(-5.5,5.5)) +
+  xlim(c(-2.5,2.5)) + 
+  xlab("Predicted metabolite levels,\nstandartized value") +
+  ylab("Observed metabolite levels, standartized value") +
+  geom_smooth(data = prediction.intervals, aes(x = yhat, y = yhat, ymin = pred.lwr, ymax = pred.upr), stat = "identity") + 
+  theme(aspect.ratio = 1)
+```
+
+#Figure 4G
+
+```{r BRENDA}
+
+brenda <- read.delim("../../data/2015-10-07/brenda.txt")
+load("../../R/objects/sentinels.proteins.matrix.sva.0.5.1.RData")
+
+
+ec.gene = unique(gene.annotations[gene.annotations$V3 == "EC number",c(1,4)]) %>% setNames(c("ecNumber", "ORF"))
+ec.gene[] <- lapply(ec.gene,as.character)
+
+
+brenda.f <- brenda %>% filter(KEGGID != "") %>% filter(!grepl(pattern="mutant|recombinant", x=commentary))
+
+load("../../R/objects/dataTCA.create_datasets.RData")
+load("../../R/objects/dataAA.create_datasets.RData")
+
+metabolitesTCA.long = reshape2::melt(dataTCA$metabolites) %>% 
+  setNames(c("sample", "metabolite_id", "value")) %>%
+  mutate(dataset = "TCA")
+
+metabolitesAA.long = reshape2::melt(dataAA$metabolites) %>% 
+  setNames(c("sample", "metabolite_id", "value")) %>%
+  mutate(dataset = "AA")
+
+# adjust concentration with volume and OD from this paper: doi:10.1016/j.funbio.2009.11.002
+my.vol = c(median = 45.54, sd = 0.9) * 1e-15 # cell vol
+my.cells = 3.2 * 10^7 * 1.5*5 #  median of spectrophotometre data Markus collected 5 ml of culture with od600  of 1.5
+ex.vol = 100*1e-6
+
+metabolitesTCA.long <- metabolitesTCA.long %>% mutate(concentration = value*ex.vol/(my.cells*my.vol[1])/1000) # mM
+
+#different dilution used fot AA protocol
+ex.vol = 400*1e-6 # correct dilution factor
+
+metabolitesAA.long <- metabolitesAA.long %>% mutate(concentration = value*ex.vol/(my.cells*my.vol[1])/1000) # mM
+metabolites.long <- bind_rows(metabolitesAA.long, metabolitesTCA.long)
+metabolites.long <- left_join(metabolites.long, metabolite2iMM904 %>% select(id, kegg_id) %>% distinct(), by  = c("metabolite_id" = "id" )) 
+metabolites.long = left_join(brenda.f, metabolites.long, c("KEGGID"="kegg_id"))
+  
+  
+models.summary = all_linear_models %>% filter(degree==1, ismetIncluded == 0,  the_super_best)
+models.summary = models.summary[models.summary$variables != "stats",]
+
+brenda_dataset <- metabolites.long %>% ungroup() %>%
+  dplyr::select(ecNumber, kmValue, substrate, KEGGID, sample, metabolite_id, value, dataset, concentration) %>% left_join(ec.gene) %>%
+  filter(ORF %in% measured.proteins, ORF %in% unique(iMM904$gene)) %>%
+  left_join(models.summary %>% ungroup() %>% select(metabolite, variables) %>% cbind(isPredictor = T), by = c("ORF" = "variables", "metabolite_id" = "metabolite")) %>%
+  mutate(isPredictor = ifelse(is.na(isPredictor), F, T))
+  
+brenda_dataset <- brenda_dataset %>% filter(kmValue > 0)
+brenda_dataset <- brenda_dataset %>% mutate(label = metabolite2iMM904$official_name[match(KEGGID, metabolite2iMM904$kegg_id)])
+brenda_dataset <- brenda_dataset %>% mutate(ratio = concentration/kmValue)
+
+toPlot = brenda_dataset
+points = brenda_dataset %>% filter(isPredictor == T)
+
+stats = data.frame(label_text = c(median(toPlot$ratio[toPlot$dataset == "AA"], na.rm=T)/median(toPlot$ratio[toPlot$dataset == "TCA"], na.rm=T),
+                                  wilcox.test(log(toPlot$ratio[toPlot$dataset == "AA"]), log(toPlot$ratio[toPlot$dataset == "TCA"]))$p.value,
+                                  sum(log(toPlot$ratio,2) > 0, na.rm=T)/length(toPlot$ratio)), #associated enzymes above Km
+                   x = -7,
+                   y = c(0.15, 0.13, 0.1))
+
+ggplot() +  
+  geom_density(data=toPlot, aes(x=log(ratio,2), fill=dataset), alpha = 0.5) +
+  geom_text(data=stats, aes(x=x+2, y=y, label = label_text)) +
+  xlab(expression(paste("Measured intracellular concentraions divided by ", K[M], " of predictor enzymes, log2(ratio)"))) +
+  geom_vline(xintercept = 0) +
+  theme_bw() +
+  theme( legend.position = c(0.7,0.7))
+
+```
+
+
+#Figure 4G
+```{r violin_boxplot, fig.width=10}
+# ### ratio whether it is predictor of not
+a = (brenda_dataset %>% filter(isPredictor == F) %>% dplyr::select(ratio))$ratio
+b = (brenda_dataset %>% filter(isPredictor == T) %>% dplyr::select(ratio))$ratio
+# 
+toPlot = brenda_dataset
+stats = data.frame(label_text = c(median(b,na.rm=T)/median(a, na.rm=T),
+                                   wilcox.test(b,a)$p.value),
+                    x = 1,
+                    y = c(5,4))
+ 
+ggplot(toPlot, aes(x = isPredictor, y = log(ratio,2))) + 
+ geom_boxplot(width=0.2)+
+ geom_violin(alpha=0)+
+ geom_text(data=stats, aes(x=x, y=y, label = label_text)) +
+ theme(aspect.ratio = 8/3)
+```
+
+
+
+
+```{r}
+
+load("../../R/objects/GO.raw._load_.RData")
+
+tRNAs <- right_join(orf2name, GO.raw[grep(pattern = "tRNA", x = GO.raw$V10),] %>%  dplyr::select(V2) %>% distinct(), by=c("sgd" = "V2"))
+
+
+yeast.model = iMM904
+AA.linear_models = all_linear_models %>% ungroup() %>% 
+  filter(metabolite %in% metabolite.order$metabolite, 
+         degree== 1, ismetIncluded == 0, isImputed == 0,
+         isAutocorrelation.bonferoni == 0, dataset == "AA")
+
+proteogenic_AA = metabolite2iMM904[grep(x = metabolite2iMM904$model_name, pattern = "-L|gly"),]  %>% 
+  filter(!(id %in% c("Malate", "citrulline","homo.cysteine", "homo.serine"))) 
+
+AA.linear_models$isProteogenic <- ifelse(AA.linear_models$metabolite %in% proteogenic_AA$id, 1, 0)
+
+tRNAs <- right_join(orf2name, GO.raw[grep(pattern = "tRNA", x = GO.raw$V10),] %>%  dplyr::select(V2) %>% distinct(), by=c("sgd" = "V2"))
+
+
+AA.linear_models = all_linear_models %>% ungroup() %>% 
+  filter(metabolite %in% metabolite.order$metabolite, 
+         degree== 1, ismetIncluded == 0, isImputed == 0,
+         isAutocorrelation.bonferoni == 0, dataset == "AA")
+
+tRNA_predictors <- AA.linear_models %>% 
+  filter(variables %in% tRNAs$ORF) %>% 
+  dplyr::select(metabolite, variables) %>% distinct() %>% 
+  left_join(ec.gene, by = c("variables" = "ORF"))
+names(tRNA_predictors) <- c("metabolite", "gene_name", "ec")
+  
+# checking for saturation
+
+
+points = brenda_dataset %>% filter(isPredictor == T)
+points2 = inner_join(points, tRNA_predictors, by = c("metabolite_id" = "metabolite", "ecNumber" = "ec"))
+toPlot <- points2
+
+toPlot %>%
+  ggplot(aes(x=log(ratio), fill = label)) +  
+    geom_density(alpha = 0.5) +
+    geom_vline(xintercept = 0) +
+    scale_fill_discrete(name = "") +
+    xlab(expression(paste("Measured intracellular concentraions divided by ", K[M], " of tRNA charging enzymes, ln(ratio)"))) +
+    theme_bw() +
+    theme(legend.position = c(0.6, 0.7), legend.background = element_rect(color = NULL), legend.direction = "horizontal")
+
+ordering <- toPlot %>% group_by(label) %>% 
+  mutate(median_ratio = median(log(ratio), na.rm=T)) %>%  ungroup() %>%
+  arrange(median_ratio) %>% dplyr::select(label) %>% distinct()
+
+
+toPlot %>% 
+  mutate(label = fct_relevel(label, levels = rev(as.character(ordering$label)))) %>%
+  ggplot(aes(x=log(ratio,2))) +  
+    geom_density(fill = "black") +
+    geom_vline(xintercept = 0) +
+    facet_wrap(~label, scales = "free_y", ncol = 1) +
+    scale_fill_discrete(name = "") +
+    xlab(expression(paste("Measured intracellular concentraions divided by ", K[M], " of tRNA charging enzymes, ln(ratio)"))) +
+    theme_bw() +
+    theme(legend.position = "none", 
+          panel.grid = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank())
+
+
+```
+
