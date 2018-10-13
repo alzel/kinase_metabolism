@@ -31,7 +31,7 @@ lst[[length(lst) + 1]] <- obj
 return(lst)
 }
 
-fun_name = "figure2"
+fun_name = "figure3"
 output_dir = "./files"
 dir.create(output_dir, showWarnings = FALSE)
 
@@ -47,20 +47,26 @@ load("../../R/objects/exp_metadata._clean_.RData")
 #dataset of control coefficients
 flux_mca <- read_delim("../2017-02-22/mca_fluxes_in_kinase_KOs.csv", delim = "\t")
 conc_mca <- read_delim("../2017-02-22/mca_conc_in_kinase_KOs.csv", delim = "\t")
-dataset.mca <- bind_rows(flux_mca, conc_mca) %>% dplyr::rename(VAR = variable) %>% group_by(var_type, KO, VAR, parameter) %>% distinct(.keep_all = T) %>% ungroup() ## unclear why multiple metabolites???? 
-dataset.mca$KO_name <- as.character(exp_metadata$gene[match(dataset.mca$KO, exp_metadata$ORF)])
-dataset.mca <- dataset.mca %>% mutate(CC = ifelse(CC < 10e-06, 0 , CC))
 
 # steady-state concentrations
 dataset.ss <- read_delim("../2017-02-22/ss_fluxes_concentrations_in_kinase_KOs.csv", delim = "\t")
 
-dataset.ss <- dataset.ss %>% group_by(variable, type) %>% 
-  filter(ss_status < 10-6) %>% 
-  mutate(z_value = (value - mean(value, na.rm=T))/sd(value, na.rm=T))
-
 # metabolite concentration daata
 load("../../R/objects/dataPPP_AA.create_datasets.RData")
 load("../../R/objects/dataTCA.create_datasets.RData")
+
+
+dataset.mca <- bind_rows(flux_mca, conc_mca) %>% dplyr::rename(VAR = variable) %>% 
+  group_by(var_type, KO, VAR, parameter) %>% distinct(.keep_all = T) %>% ungroup()
+dataset.mca$KO_name <- as.character(exp_metadata$gene[match(dataset.mca$KO, exp_metadata$ORF)])
+dataset.mca <- dataset.mca %>% mutate(CC = ifelse(CC < 10e-06, 0 , CC))
+
+
+# 
+# dataset.ss <- dataset.ss %>% group_by(variable, type) %>% 
+#   filter(ss_status < 10-6) %>% 
+#   mutate(z_value = (value - mean(value, na.rm=T))/sd(value, na.rm=T))
+
 
 
 #don't format the following vectors!!!
@@ -304,9 +310,9 @@ grid.arrange(p.pca, p.strongest, ncol=2)
 
 ```
 
-```{r}
+```{r steady_state_kinetics}
 
-dataset.ss <- read_delim("../2017-02-22/ss_fluxes_concentrations_in_kinase_KOs.csv", delim = "\t")
+
 
 dataset.ss_conc <- dataset.ss %>% filter(type == "conc", ss_status < 1e-6)
 
