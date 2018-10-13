@@ -51,6 +51,9 @@ load("../../R/objects/exp_metadata._clean_.RData")
 load("../../R/objects/orf2name._clean_.RData")
 load("../../R/objects/gene.annotations._load_.RData")
 
+load("../../R/objects/pathway2orf._load_.RData")
+UniProt2Reactome <- read.delim("../../data/2016-04-29/UniProt2Reactome.txt", header=FALSE, stringsAsFactors = F)
+
 protein.matrix <- proteins.matrix.sva.0.5.1
 proteins.FC <- proteins.matrix.sva.0.5.1.FC
 
@@ -308,7 +311,7 @@ clearning data for similarity histograms
 
 ```{r similarity_cleaning}
 
-UniProt2Reactome <- read.delim("../../data/2016-04-29/UniProt2Reactome.txt", header=FALSE, stringsAsFactors = F)
+
 names(UniProt2Reactome) <- c("uniprot_id", "reactome_id", "url", "description", "confidence", "species")
 UniProt2Reactome <- tbl_df(UniProt2Reactome) %>% 
   filter(species == "Saccharomyces cerevisiae") %>% 
@@ -324,7 +327,7 @@ uniprot2reactome <- UniProt2Reactome %>%
   rename(pathway = reactome_id) %>%
   select(pathway, uniprot_id, n)
 
-load("../../R/objects/pathway2orf._load_.RData")
+
 
 uniprot2kegg <- pathway2orf %>% 
   mutate(uniprot_id = uniprot2orf.kinases$uniprot_id[match(ORF, uniprot2orf.kinases$ORF)]) %>%
