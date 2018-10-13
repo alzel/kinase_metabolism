@@ -48,6 +48,18 @@ load("../../R/objects/proteins.matrix.sva.0.5.1.FC.RData")
 load("../../R/objects/iMM904._load_.RData")
 load("../../R/objects/exp_metadata._clean_.RData")
 
+#pathway coverage
+load("../../R/objects/KEGG.pathways.analysis1.RData")
+load("../../R/objects/kegg_categories._load_.RData")
+
+#transcriptome vs proteome
+load("../../R/objects/transcriptome.FC._clean_.RData")
+load("../../R/objects/orf2ko._load_.RData")
+load("../../R/objects/orf2name._clean_.RData")
+
+#absolute data
+load(file = "../../R/objects/absolute_dataset._clean_.RData")
+
 protein.matrix <- proteins.matrix.sva.0.5.1
 proteins.FC <- proteins.matrix.sva.0.5.1.FC
 
@@ -94,8 +106,6 @@ toPlot %>%
 ```{r kegg_coverages}
 
 
-load("../../R/objects/KEGG.pathways.analysis1.RData")
-load("../../R/objects/kegg_categories._load_.RData")
 
 KEGG.pathways.stats <- KEGG.pathways %>%
   group_by(pathway) %>% 
@@ -386,10 +396,6 @@ proteins.FC.f.stats  %>%
 
 
 ```{r tr_vs_pr}
-# load("./R/objects/proteins.matrix.combat.quant.FC.RData")
-load("../../R/objects/transcriptome.FC._clean_.RData")
-load("../../R/objects/orf2ko._load_.RData")
-load("../../R/objects/orf2name._clean_.RData")
 
 #transcriptome.FC$KO = NULL
 transcriptome.FC <- transcriptome.FC %>% dplyr::select(c("ORF", "logFC", "p.value", "p.value_BH", "KO.ORF"))
@@ -418,7 +424,7 @@ ggplot(aes(x = cor)) +
 ```
 ```{r absolute perturbations}
 
-load(file = "../../R/objects/absolute_dataset._clean_.RData")
+
 
 absolute_dataset <- absolute_dataset %>% mutate(isiMM904 = ORF %in% iMM904$gene)
 
