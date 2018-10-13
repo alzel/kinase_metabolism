@@ -43,22 +43,22 @@ options(dplyr.print_min = 6, dplyr.print_max = 6)
 ```
 
 ```{r figure_data}
-load("../../R/objects/proteins.matrix.sva.0.5.1.RData")
-load("../../R/objects/proteins.matrix.sva.0.5.1.FC.RData")
-load("../../R/objects/iMM904._load_.RData")
-load("../../R/objects/exp_metadata._clean_.RData")
+load("./data/proteins.matrix.sva.0.5.1.RData")
+load("./data/proteins.matrix.sva.0.5.1.FC.RData")
+load("./data/iMM904._load_.RData")
+load("./data/exp_metadata._clean_.RData")
 
 #pathway coverage
-load("../../R/objects/KEGG.pathways.analysis1.RData")
-load("../../R/objects/kegg_categories._load_.RData")
+load("./data/KEGG.pathways.analysis1.RData")
+load("./data/kegg_categories._load_.RData")
 
 #transcriptome vs proteome
-load("../../R/objects/transcriptome.FC._clean_.RData")
-load("../../R/objects/orf2ko._load_.RData")
-load("../../R/objects/orf2name._clean_.RData")
+load("./data/transcriptome.FC._clean_.RData")
+load("./data/orf2ko._load_.RData")
+load("./data/orf2name._clean_.RData")
 
 #absolute data
-load(file = "../../R/objects/absolute_dataset._clean_.RData")
+load(file = "./data/absolute_dataset._clean_.RData")
 
 protein.matrix <- proteins.matrix.sva.0.5.1
 proteins.FC <- proteins.matrix.sva.0.5.1.FC
