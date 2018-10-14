@@ -42,19 +42,17 @@ options(dplyr.print_min = 6, dplyr.print_max = 6)
 
 ```{r figure_data}
 
-load("../../R/objects/exp_metadata._clean_.RData")
+load("./data/exp_metadata._clean_.RData")
 
 #dataset of control coefficients
-flux_mca <- read_delim("../2017-02-22/mca_fluxes_in_kinase_KOs.csv", delim = "\t")
-conc_mca <- read_delim("../2017-02-22/mca_conc_in_kinase_KOs.csv", delim = "\t")
+flux_mca <- read_delim("./data/mca_fluxes_in_kinase_KOs.csv", delim = "\t")
+conc_mca <- read_delim("./data/mca_conc_in_kinase_KOs.csv", delim = "\t")
 
 # steady-state concentrations
-dataset.ss <- read_delim("../2017-02-22/ss_fluxes_concentrations_in_kinase_KOs.csv", delim = "\t")
+dataset.ss <- read_delim("./data/ss_fluxes_concentrations_in_kinase_KOs.csv", delim = "\t")
 
 # metabolite concentration daata
-load("../../R/objects/dataPPP_AA.create_datasets.RData")
-load("../../R/objects/dataTCA.create_datasets.RData")
-
+load("./data/dataPPP_AA.create_datasets.RData")
 
 dataset.mca <- bind_rows(flux_mca, conc_mca) %>% dplyr::rename(VAR = variable) %>% 
   group_by(var_type, KO, VAR, parameter) %>% distinct(.keep_all = T) %>% ungroup()
@@ -315,10 +313,7 @@ grid.arrange(p.pca, p.strongest, ncol=2)
 
 
 dataset.ss_conc <- dataset.ss %>% filter(type == "conc", ss_status < 1e-6)
-
-
 dataset_metabolites <- dataPPP_AA$metabolites %>% reshape2::melt(id.vars = rownames())
-
 
 names(dataset_metabolites) <- c("KO", "metabolite", "conc")
 dataset_metabolites$gene_name <- as.character(exp_metadata$gene[match(dataset_metabolites$KO, exp_metadata$ORF)])
@@ -326,10 +321,6 @@ dataset_metabolites$gene_name <- as.character(exp_metadata$gene[match(dataset_me
 
 model2metabolite <- data.frame(model_name =     c("GLC", "G6P", "F6P", "F16bP",      "GAP", "DHAP", "BPG", "P3G",      "P2G", "PEP",     "PYR", "AcAld", "G1P", "G3P", "UDP", "UTP", "T6P", "ADP", "ATP", "NAD"),
                               metabolite_name = c(NA, "G6P...F6P", "F6P", "X1.6.FP.", NA, "DHAP", NA, "X2...3.PG", "X2...3.PG", "PEP", "Pyr", NA,      NA,    "G3P",    NA,    NA ,     NA,  "ADP", "ATP", NA), stringsAsFactors = F)
-
-
-# model2metabolite <- data.frame(model_name =     c("GLC", "G6P", "F6P", "F16bP",      "GAP", "DHAP", "BPG", "P3G",      "P2G", "PEP",     "PYR", "AcAld", "G1P", "G3P", "UDP", "UTP", "T6P", "ADP", "ATP", "NAD"),
-#                                metabolite_name = c(NA, "G6P...F6P", "F6P", "X1.6.FP.", "G3P", "DHAP", NA, "X2...3.PG", "X2...3.PG", "PEP", "Pyr", NA,      NA,    NA,    NA,    NA ,     NA,  "ADP", "ATP", NA), stringsAsFactors = F)
 
 
 dataset.ss_conc$metabolite <- model2metabolite$metabolite_name[match(dataset.ss_conc$variable, model2metabolite$model_name)]
