@@ -55,6 +55,8 @@ load("../../R/objects/gene.annotations._load_.RData")
 
 iMM904[] <- lapply(iMM904, as.character)
 
+load("./data/all_final_models.models.data_prep.RData")
+
 ```
 
 
@@ -62,122 +64,12 @@ iMM904[] <- lapply(iMM904, as.character)
 ```{r predictors_mlr, fig.width=15, fig.asp=1.44}
 
 
-input_path = "../2016-02-24/linear_models"
-
-
-filesToProcess = dir(path=input_path, pattern = "[123].[01]+.linear_models.RData$", recursive=F)
-filesToProcess = grep(pattern="imputed", invert=T, filesToProcess, value=T)
-filesToProcess = grep(pattern="([1,3]+).([0-9]+).linear_models.RData", filesToProcess, value=T)
-
-pattern.p = "data.(\\w+).(.*?).([0-9]+).([0-9]+).linear_models.RData$"
-
-
-# filesToProcess = dir(path=input_path, pattern = "[123].[01]+.linear_models.RData$", recursive=F)
-# filesToProcess = grep(pattern="imputed", invert=T, filesToProcess, value=T)
-# filesToProcess = grep(pattern="([1,3]+).([0-9]+).linear_models.RData", filesToProcess, value=T)
-
-
-pattern.p = "data.(\\w+).(.*?).([0-9]+).([0-9]+).linear_models.RData$"
-matches = stringr::str_match_all(pattern=pattern.p, filesToProcess)
-
-
-metabolite.order <- read_delim("../../data/2015-10-16/metabolites.txt", delim = "\t")
-metabolite.order = metabolite.order[with(metabolite.order,order(desc(method),pathway,Order, met_name)),]
-
-
-read_models.models = function(x) {
-  z <<- x
-  x = z
-  file_name = paste(input_path,x[[1]], sep="/") 
-  my_models = get(load(file_name))
-  
-  models = my_models$models
-  tmp = data.frame()
-  for (i in 1:length(models)) {
-    for (j in c("before", "after")) {
-      coefficients1 = models[[i]][[j]]$coefficients[-1]
-      if(any(grepl(x = names(coefficients1), pattern = "PC\\d+"))) {
-        tmp_d = my_models$trans.x$rotation %>% reshape2::melt(id.vars = rownames()) %>%
-          filter(Var2 %in% names(coefficients1)) %>% arrange(Var2, -abs(value)) %>% group_by(Var2) %>% filter(row_number() <= 2) %>% #number of loadings per component
-          left_join(coefficients1 %>% reshape2::melt(id.vars = names()) %>% mutate(component = names(coefficients1)),
-                    by = c("Var2" = "component")) %>%
-          group_by(Var1) %>%
-          dplyr::summarize(coefficient = value.y[which.max(abs(value.y))])
-
-          coefficients1 = tmp_d$coefficient
-          names(coefficients1) = tmp_d$Var1
-      }
-    
-    tmp = rbind(tmp, data.frame(model = i, type = j, coefficients = coefficients1, variables =  names(coefficients1)))
-    tmp = rbind(tmp, data.frame(model = i, type = j, coefficients = NA, variables = "stats"))
-      
-    }
-  }
-    
-  table = tmp
-  
-  table$dataset = factor(x[[2]])
-  table$species  = factor(x[[3]])
-  table$isImputed = ifelse(length(grep(pattern="imputed", x=x[[3]])) == 0, 0, 1)
-  table$degree  = factor(x[[4]])
-  table$ismetIncluded  = factor(x[[5]])
-  table$file =  factor(x[[1]])
-  table = merge(table,  my_models$summaries, by = c("model", "type"))
-  
-  annotations = my_models$summaries %>% dplyr::select(model, type, adj.r.squared)
-  colnames(annotations)[3] = "stats_text"
-  
-  annotations$variables  = "stats"
-  table = merge(table, annotations, by = c("model", "type", "variables"), all=T)
-  return(table)
-}
-
-file.list = lapply(matches, FUN=read_models.models)
-all_final_models.models <- bind_rows(file.list)
-
-
-auto_thr = 0.05
-auto_thr.bonferonni = auto_thr/length(unique(all_final_models.models$formula))
-
-all_final_models.models <- all_final_models.models %>% 
-                            mutate(metabolite = species,
-                                   metabolite = str_replace(metabolite, pattern="log.quant.(.*)", replacement="\\1"),
-                                   metabolite = str_replace(metabolite, pattern="log.(.*)", replacement="\\1"),
-                                   normalization = ifelse(str_detect(string = species, pattern = "log"), 
-                                                          ifelse(str_detect(string = species, pattern = "log.quant"), "log.quant", "log"),
-                                                          "bc"),
-                                   isAutocorrelation.bonferoni = ifelse(bg.p.value < auto_thr.bonferonni, 1, 0),
-                                   isAutocorrelation = ifelse(bg.p.value < auto_thr, 1, 0),
-                                   mode = ifelse(coefficients > 0,1,0))
-
-
-#all_final_models.models %>% filter(degree == 1, metabolite == "ATP") %>% View
-
-#selecting best representative model based on adj R2 out of all normalization methods
-all_final_models.models <- all_final_models.models %>% 
-  dplyr::filter(type == "after", 
-                isImputed == 0, isAutocorrelation.bonferoni == 0) %>%
-  group_by(dataset, model, metabolite, ismetIncluded, degree) %>% 
-  dplyr::mutate(the_best = adj.r.squared == max(adj.r.squared)) %>% # best among normalization methods
-  group_by(dataset, metabolite, ismetIncluded, degree) %>% 
-  dplyr::mutate(the_super_best = adj.r.squared == max(adj.r.squared)) #the best model
-
-all_final_models.models = all_final_models.models %>% mutate(varname = orf2name$gene_name[match(variables, orf2name$ORF)]) 
-                               
-
-all_final_models.models$varname[which(is.na(all_final_models.models$varname))] = as.character(all_final_models.models$variables[is.na(all_final_models.models$varname)])
-
-#tmp.lev = unique(sort(all_final_models.models$varname))
-#all_final_models.models$varname = factor(all_final_models.models$varname, levels=c("stats", tmp.lev[tmp.lev != "stats"]))
-
-all_final_models.models = all_final_models.models %>% mutate(metabolite.label = metabolite2iMM904$official_name[match(metabolite, metabolite2iMM904$id)])
-
-
 selected_models  = dplyr::filter(all_final_models.models, type == "after", 
                         metabolite %in% metabolite.order$metabolite, 
                         adj.r.squared > 0.25, the_best == T, degree == 1)
 
 
+selected_models %>%
 ggplot() +
   geom_text(data=selected_models, aes(x=factor(model), y = varname, label=round(stats_text,2))) +
   geom_point(data=selected_models, aes(x=factor(model), y = varname, 
@@ -375,7 +267,7 @@ ec.gene = unique(gene.annotations[gene.annotations$V3 == "EC number",c(1,4)]) %>
 ec.gene[] <- lapply(ec.gene,as.character)
 
 
-brenda.f <- brenda %>% filter(KEGGID != "") %>% filter(!grepl(pattern="mutant|recombinant", x=commentary))
+brenda.f <- brenda %>% filter(KEGGID != "") %>% filter(!grepl(pattern="mutant|recombinant", x=commentary)) # removing non-native enzymes
 
 load("../../R/objects/dataTCA.create_datasets.RData")
 load("../../R/objects/dataAA.create_datasets.RData")
