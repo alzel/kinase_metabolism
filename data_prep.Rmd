@@ -1,0 +1,452 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r setup}
+library(tidyverse)
+library(gridExtra)
+library(devtools)
+library(sva)
+
+set.seed(1014)
+options(digits = 3)
+
+knitr::opts_chunk$set(
+  comment = "#>",
+  collapse = TRUE,
+  cache = TRUE,
+  out.width = "70%",
+  fig.align = 'center',
+  fig.width = 6,
+  fig.asp = 0.618,  # 1 / phi
+  fig.show = "hold",
+  dev = c("pdf", "png")
+)
+
+lappend <- function(lst, obj) {
+  lst[[length(lst)+1]] <- obj
+  return(lst)
+}
+
+fun_name = "data_prep"
+output_dir = "./files"
+dir.create(output_dir, showWarnings = FALSE)
+
+options(dplyr.print_min = 6, dplyr.print_max = 6)
+
+data_dir = "./data"
+save_data_dir = data_dir
+dir.create(save_data_dir, showWarnings = FALSE)
+options(dplyr.print_min = 6, dplyr.print_max = 6)
+
+save_object <- function(object, save_data_dir) {
+  object_name = deparse(substitute(object))
+  file_name = paste(object_name, fun_name, "RData", sep = ".")
+  file_path = paste(save_data_dir, file_name, sep="/")
+  save(list = eval(object_name), file = file_path)
+}
+
+
+```
+
+```{r experiment_metadata}
+load("../../R/objects/exp_metadata._clean_.RData")
+load("../../R/objects/proteins.matrix.sva.0.5.1.RData")
+
+exp_metadata[] <- lapply(exp_metadata, as.character)
+
+protein.matrix = proteins.matrix.sva.0.5.1
+file_name = paste("exp_metadata_filtered", fun_name, "tsv", sep=".")
+file_path = paste(output_dir, file_name, sep="/")
+exp_metadata %>% filter(sample_name %in% colnames(protein.matrix)) %>% select(-aquisition_date,-batch_date, -batch.exp.n) %>% write_tsv(path = file_path)
+
+```
+```{r readme}
+read_me <- c('The dataset comprised of processed data produced in Zelezniak at al, Cell Systems 2018 study. 
+
+metabolites_dataset.data_prep.tsv - processed, batch corrected metabolite levels from glycolysis, pentose phosphate and TCA cycle pathways of yeast kinase knockouts
+columns:
+  metabolite_id - metabolite ID
+  kegg_id - corresponding KEGG metabolite ID (Kanehisa et al 2016)  
+  official_name - the common name of metabolite
+  dataset - the protocol that was used to generate the dataset, for more details please see STAR methods in Zelezniak et al, Cell Systems, 2018 
+  KO_ORF - kinase knockout\'s ORF, where WT - parental strain/wild-type, for more details please see STAR methods in Zelezniak et al, Cell Systems, 2018
+  KO_gene - kinase knockout\'s yeast gene name, where WT - parental strain/wild-type, for more details please see STAR methods in Zelezniak et al, Cell Systems, 2018
+  replicate - biological replicate
+  value - metabolite signal obtained from SRM-MS/MS experiment, corrected for batch effects, for more details please see STAR methods in Zelezniak et al, Cell Systems, 2018
+
+proteins_dataset.data_prep.tsv - processed, batch corrected protein levels of yeast kinase knockouts
+columns:
+  ORF - ORF of measured protein
+  sample - sample name from the study
+  replicate - replicate
+  KO_ORF - kinase knockout\'s ORF, where WT - parental strain/wild-type, for more details please see STAR methods in Zelezniak et al, Cell Systems, 2018
+  KO_gene - kinase knockout\'s yeast gene name, where WT - parental strain/wild-type, for more details please see STAR methods in Zelezniak et al, Cell Systems, 2018
+  value - label-free protein signal quantification using SWATH-MS, corrected for batch effects, for more details please see STAR methods in Zelezniak et al, Cell Systems, 2018
+
+References:
+  Kanehisa, M., Sato, Y., Kawashima, M., Furumichi, M., and Tanabe, M.; KEGG as a reference resource for gene and protein annotation. Nucleic Acids Res. 44, D457-D462 (2016)
+')
+
+file_name = paste("README", "txt", sep=".")
+file_path = paste(output_dir, file_name, sep="/")
+read_me %>% write_file(file_path)
+
+```
+
+```{r metabolite_data}
+load("../../R/objects/dataPPP_AA.create_datasets.RData")
+load("../../R/objects/dataTCA.create_datasets.RData")
+load("../../R/objects/dataAA.create_datasets.RData")
+load("../../R/objects/metabolite2iMM904._load_.RData")
+
+metabolite2iMM904[] <- lapply(metabolite2iMM904, as.character)
+
+
+dataPPP_AAA_long <- dataPPP_AA$metabolites %>% 
+  as.data.frame() %>% 
+  mutate(genotype = rownames(dataPPP_AA$metabolites),
+         dataset = 1,
+         proteome_sample = NA) %>%
+  gather(metabolite, value, -genotype, -dataset, -proteome_sample) %>%
+  left_join(metabolite2iMM904, by = c("metabolite" = "id"))
+  
+
+dataTCA_long <- dataTCA$metabolites %>% 
+  as.data.frame() %>% 
+  mutate(genotype = exp_metadata$ORF[match(rownames(dataTCA$metabolites), exp_metadata$sample_name)],
+         dataset = 2,
+         proteome_sample = rownames(dataTCA$metabolites)) %>%
+  gather(metabolite, value, -genotype, -dataset, -proteome_sample) %>%
+  left_join(metabolite2iMM904, by = c("metabolite" = "id"))
+
+dataAA_long <- dataAA$metabolites %>% 
+  as.data.frame() %>% 
+  mutate(genotype = exp_metadata$ORF[match(rownames(dataAA$metabolites), exp_metadata$sample_name)],
+         dataset = 3,
+         proteome_sample = rownames(dataAA$metabolites)) %>%
+  gather(metabolite, value, -genotype, -dataset, -proteome_sample) %>%
+  left_join(metabolite2iMM904, by = c("metabolite" = "id")) %>% filter(!(metabolite %in% c("AABA", "GABA")))
+
+
+metabolite_dataset <- bind_rows(dataPPP_AAA_long, dataTCA_long, dataAA_long) %>% filter(!is.na(value))
+
+#colapsing IDs 
+metabolite_dataset <- metabolite_dataset %>% 
+  group_by(metabolite, dataset, genotype, proteome_sample) %>% 
+    summarise(metabolite_id = paste(model_name, collapse = ";"),
+              kegg_id = paste(kegg_id, collapse = ";"),
+              official_name = paste(official_name, collapse = ";"),
+              value = unique(value)) %>%
+  group_by(metabolite, dataset, genotype) %>% 
+    mutate(replicate = row_number()) %>%
+  ungroup() %>%
+  rename(KO_ORF = genotype) %>% 
+  mutate(KO_gene = exp_metadata$gene[match(KO_ORF, exp_metadata$ORF)]) %>%
+  dplyr::select(metabolite_id, kegg_id, official_name, dataset, KO_ORF, KO_gene, replicate, value)
+  
+file_name = paste("metabolites_dataset", fun_name, "tsv", sep=".")
+file_path = paste(output_dir, file_name, sep="/")
+metabolite_dataset %>% write_tsv(path = file_path)
+
+```
+
+
+
+
+```{r proteome_data}
+  
+proteins_dataset <- protein.matrix %>% as.data.frame() %>% 
+  mutate(ORF = rownames(protein.matrix)) %>% 
+  gather(sample, value, -ORF) %>%
+  mutate(KO_ORF = exp_metadata$ORF[match(sample, exp_metadata$sample_name)],
+         KO_gene = exp_metadata$gene[match(sample, exp_metadata$sample_name)]) %>% 
+  filter(KO_ORF != "none") %>%
+  group_by(ORF, KO_ORF) %>%
+    mutate(replicate = row_number(),
+           value = exp(value)) %>%
+  select(ORF, sample, replicate, KO_ORF, KO_gene, value)
+
+file_name = paste("proteins_dataset", fun_name, "tsv", sep=".")
+file_path = paste(output_dir, file_name, sep="/")
+proteins_dataset %>% write_tsv(path = file_path)
+
+```
+
+
+```{r Figure1_data}
+
+figure_files = c("../../R/objects/proteins.matrix.sva.0.5.1.RData", 
+                 "../../R/objects/proteins.matrix.sva.0.5.1.FC.RData",
+                 "../../R/objects/iMM904._load_.RData",
+                 "../../R/objects/exp_metadata._clean_.RData",
+                "../../R/objects/KEGG.pathways.analysis1.RData", #pathway coverage
+                "../../R/objects/kegg_categories._load_.RData", #pathway coverage
+                "../../R/objects/transcriptome.FC._clean_.RData", #transcriptome vs proteome  
+                "../../R/objects/orf2ko._load_.RData",  #transcriptome vs proteome  
+                "../../R/objects/orf2name._clean_.RData", #transcriptome vs proteome  
+                "../../R/objects/absolute_dataset._clean_.RData") ##absolute data
+
+file.copy(figure_files, data_dir)
+
+```
+```{r Figure2_data}
+
+figure_files = c("../../R/objects/proteins.matrix.sva.0.5.1.RData", 
+                 "../../R/objects/proteins.matrix.sva.0.5.1.FC.RData",
+                 "../../R/objects/iMM904._load_.RData", 
+                 "../../R/objects/exp_metadata._clean_.RData",
+                 "../../R/objects/orf2name._clean_.RData",
+                 "../../R/objects/gene.annotations._load_.RData",
+                 "../../R/objects/pathway2orf._load_.RData",
+                 "../../data/2016-04-29/UniProt2Reactome.txt")
+
+file.copy(figure_files, data_dir)
+
+
+```
+
+```{r Figure3_data}
+
+figure_files = c("../../R/objects/exp_metadata._clean_.RData",
+                  "../2017-02-22/mca_fluxes_in_kinase_KOs.csv", #dataset of control coefficients
+                 "../2017-02-22/mca_conc_in_kinase_KOs.csv",   #dataset of control coefficients
+                 "../2017-02-22/ss_fluxes_concentrations_in_kinase_KOs.csv", # steady-state concentrations
+                  "../../R/objects/dataPPP_AA.create_datasets.RData",# metabolite concentration data
+                  "../../R/objects/dataTCA.create_datasets.RData") # metabolite concentration data
+                 
+                 
+file.copy(figure_files, data_dir)
+
+```
+
+```{r Figure4_data}
+
+figure_files = c("../../data/2015-10-16/metabolites.txt")
+file.copy(figure_files, data_dir)
+
+
+
+#data for MLR models
+input_path = "../2016-02-24/linear_models"
+
+filesToProcess = dir(path=input_path, pattern = "[123].[01]+.linear_models.RData$", recursive=F)
+filesToProcess = grep(pattern="imputed", invert=T, filesToProcess, value=T)
+filesToProcess = grep(pattern="([1,3]+).([0-9]+).linear_models.RData", filesToProcess, value=T)
+
+pattern.p = "data.(\\w+).(.*?).([0-9]+).([0-9]+).linear_models.RData$"
+matches = stringr::str_match_all(pattern=pattern.p, filesToProcess)
+
+
+
+
+read_models.models = function(x) {
+  z <<- x
+  x = z
+  file_name = paste(input_path,x[[1]], sep="/") 
+  my_models = get(load(file_name))
+  
+  models = my_models$models
+  tmp = data.frame()
+  for (i in 1:length(models)) {
+    for (j in c("before", "after")) {
+      coefficients1 = models[[i]][[j]]$coefficients[-1]
+      if(any(grepl(x = names(coefficients1), pattern = "PC\\d+"))) {
+        tmp_d = my_models$trans.x$rotation %>% reshape2::melt(id.vars = rownames()) %>%
+          filter(Var2 %in% names(coefficients1)) %>% arrange(Var2, -abs(value)) %>% 
+          group_by(Var2) %>% filter(row_number() <= 2) %>% #number of loadings per component
+          left_join(coefficients1 %>% reshape2::melt(id.vars = names()) %>% mutate(component = names(coefficients1)),
+                    by = c("Var2" = "component")) %>%
+          group_by(Var1) %>%
+          dplyr::summarize(coefficient = value.y[which.max(abs(value.y))])
+
+          coefficients1 = tmp_d$coefficient
+          names(coefficients1) = tmp_d$Var1
+      }
+    
+    tmp = rbind(tmp, data.frame(model = i, type = j, coefficients = coefficients1, variables =  names(coefficients1)))
+    tmp = rbind(tmp, data.frame(model = i, type = j, coefficients = NA, variables = "stats"))
+      
+    }
+  }
+    
+  table = tmp
+  
+  table$dataset = factor(x[[2]])
+  table$species  = factor(x[[3]])
+  table$isImputed = ifelse(length(grep(pattern="imputed", x=x[[3]])) == 0, 0, 1)
+  table$degree  = factor(x[[4]])
+  table$ismetIncluded  = factor(x[[5]])
+  table$file =  factor(x[[1]])
+  table = merge(table,  my_models$summaries, by = c("model", "type"))
+  
+  annotations = my_models$summaries %>% dplyr::select(model, type, adj.r.squared)
+  colnames(annotations)[3] = "stats_text"
+  
+  annotations$variables  = "stats"
+  table = merge(table, annotations, by = c("model", "type", "variables"), all=T)
+  return(table)
+}
+
+file.list = lapply(matches, FUN=read_models.models)
+all_final_models.models <- bind_rows(file.list)
+
+
+auto_thr = 0.05
+auto_thr.bonferonni = auto_thr/length(unique(all_final_models.models$formula))
+
+all_final_models.models <- all_final_models.models %>% 
+                            mutate(metabolite = species,
+                                   metabolite = str_replace(metabolite, pattern="log.quant.(.*)", replacement="\\1"),
+                                   metabolite = str_replace(metabolite, pattern="log.(.*)", replacement="\\1"),
+                                   normalization = ifelse(str_detect(string = species, pattern = "log"), 
+                                                          ifelse(str_detect(string = species, pattern = "log.quant"), "log.quant", "log"),
+                                                          "bc"),
+                                   isAutocorrelation.bonferoni = ifelse(bg.p.value < auto_thr.bonferonni, 1, 0),
+                                   isAutocorrelation = ifelse(bg.p.value < auto_thr, 1, 0),
+                                   mode = ifelse(coefficients > 0,1,0))
+
+
+#all_final_models.models %>% filter(degree == 1, metabolite == "ATP") %>% View
+
+#selecting best representative model based on adj R2 out of all normalization methods
+all_final_models.models <- all_final_models.models %>% 
+  dplyr::filter(type == "after", 
+                isImputed == 0, isAutocorrelation.bonferoni == 0) %>%
+  group_by(dataset, model, metabolite, ismetIncluded, degree) %>% 
+  dplyr::mutate(the_best = adj.r.squared == max(adj.r.squared)) %>% # best among normalization methods
+  group_by(dataset, metabolite, ismetIncluded, degree) %>% 
+  dplyr::mutate(the_super_best = adj.r.squared == max(adj.r.squared)) #the best model
+
+all_final_models.models = all_final_models.models %>% mutate(varname = orf2name$gene_name[match(variables, orf2name$ORF)]) 
+                               
+
+all_final_models.models$varname[which(is.na(all_final_models.models$varname))] = as.character(all_final_models.models$variables[is.na(all_final_models.models$varname)])
+
+#tmp.lev = unique(sort(all_final_models.models$varname))
+#all_final_models.models$varname = factor(all_final_models.models$varname, levels=c("stats", tmp.lev[tmp.lev != "stats"]))
+
+all_final_models.models = all_final_models.models %>% mutate(metabolite.label = metabolite2iMM904$official_name[match(metabolite, metabolite2iMM904$id)])
+
+
+all_linear_models <- all_final_models.models %>% 
+  filter(type == "after",  
+        isImputed == 0 , isAutocorrelation.bonferoni == 0) %>%
+      group_by(metabolite, ismetIncluded, degree) %>% 
+        mutate(the_super_best = adj.r.squared == max(adj.r.squared)) #the best model
+
+save_object(all_linear_models, data_dir)
+
+## ---- Example ATP, ADP, AMP, GLutamine ----
+
+met = c("ATP", "ADP", "AMP", "glutamine")
+
+example.models = all_linear_models %>% ungroup() %>% filter(degree == 1, ismetIncluded == 0, the_super_best == T, metabolite %in% met) %>% 
+  group_by(metabolite) %>% summarize(model = model[1],
+                                     type = type[1],
+                                     file = file[1],
+                                     adj.r.squared = adj.r.squared[1],
+                                     median.cv.r2 =  median.cv.r2[1])
+
+tmp.list = list()
+for(i in 1:nrow(example.models)) {
+  tmp.list[[i]] = matrix(t(example.models[i,]), nrow=1)
+}
+
+
+
+
+read_models = function(x) {
+  #x = tmp.list[[1]]
+  file_name = paste(input_path,x[[4]], sep="/") 
+  my_models = get(load(file_name))
+  
+  models = my_models$models
+  
+  fit = models[[as.numeric(x[[2]])]][[x[[3]]]]
+  
+  yhat = predict(fit, fit$model[,-1])
+  
+  table = data.frame(metabolite = x[[1]],
+                     model = x[[2]],
+                     type = x[[3]],
+                     file = x[[4]],
+                     y = fit$model[,1],
+                     yhat = yhat,
+                     adj.r.squared = x[[5]],
+                     median.cv.r2 =  x[[6]],
+                     predictors = paste(names(coefficients(fit)[-1]), collapse = ":"),
+                     coefficients = paste(coefficients(fit)[-1], collapse = ":"),
+                     sample_name = rownames(fit$model))
+  return(table)
+}
+
+read_predictions = function(x) {
+  #x = tmp.list[[2]]
+  file_name = paste(input_path,x[[4]], sep="/") 
+  my_models = get(load(file_name))
+  
+  models = my_models$models
+  
+  fit = models[[as.numeric(x[[2]])]][[x[[3]]]]
+  
+  M = cor(fit$model[,-1])
+  L = chol(M)
+  nvars = dim(L)[1]
+  n_obs = 1000
+  
+  r = t(L) %*% matrix(rnorm(nvars*n_obs, mean = 0, sd = 1), nrow=nvars, ncol=n_obs)
+  r = as.data.frame(t(r))
+  names(r) <- names(fit$model[,-1])
+  
+  #yhat_real = predict(fit, fit$model[,-1])
+  
+  yhat = predict(fit, r)
+  conf = predict(fit, r, interval = "confidence", level = 0.95)
+  pred = predict(fit, r, interval = "prediction", level = 0.95)
+  
+  pred.int <- as.data.frame(cbind(yhat,pred))
+  conf.int <- as.data.frame(cbind(yhat,conf))
+  
+#    g.pred <- ggplot(pred.int, aes(x = yhat, y = fit)) +
+#     theme_bw() +
+#     ggtitle("Prediction interval for future observations from predict()") +
+#     geom_point(data = xy, aes(x = x, y = y)) +
+#     geom_smooth(data = pred.int, aes(ymin = lwr, ymax = upr), stat = "identity") 
+#     #geom_smooth(data = conf.int, aes(ymin = lwr, ymax = upr), stat = "identity", fill="red")
+
+  
+   table = data.frame(metabolite = x[[1]],
+                     model = x[[2]],
+                     type = x[[3]],
+                     file = x[[4]],
+                     yhat = yhat,
+                     conf.lwr = conf.int$lwr,
+                     conf.upr = conf.int$upr,
+                     pred.lwr = pred.int$lwr,
+                     pred.upr = pred.int$upr,
+                     adj.r.squared = x[[5]],
+                     median.cv.r2 =  x[[6]] )
+  return(table)
+}
+
+
+prediction.list = lapply(tmp.list, FUN=read_models)
+prediction.models = do.call(rbind.data.frame, prediction.list)
+
+prediction.models <- prediction.models %>% group_by(metabolite) %>% arrange(y)
+prediction.models$gene = exp_metadata$gene[match(prediction.models$sample_name, exp_metadata$ORF)]
+
+
+prediction.models <- prediction.models %>% 
+  group_by(metabolite) %>% 
+  mutate(ntile20 = ntile(yhat, 20))
+
+simulations.list = lapply(tmp.list, FUN=read_predictions)
+prediction.intervals = do.call(rbind.data.frame, simulations.list)
+
+save_object(prediction.models, data_dir)
+save_object(prediction.intervals, data_dir)
+```

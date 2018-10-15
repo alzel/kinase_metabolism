@@ -52,10 +52,36 @@ load("../../R/objects/exp_metadata._clean_.RData")
 load("../../R/objects/orf2name._clean_.RData")
 load("../../R/objects/metabolite2iMM904._load_.RData")
 load("../../R/objects/gene.annotations._load_.RData")
+brenda <- read_delim("../../data/2015-10-07/brenda.txt", delim = "\t")
+load("../../R/objects/sentinels.proteins.matrix.sva.0.5.1.RData")
+load("./data/proteins.matrix.sva.0.5.1.RData")
+load("./data/proteins.matrix.sva.0.5.1.FC.RData")
+load("../../R/objects/GO.raw._load_.RData")
+metabolite.order <- read_delim("../../data/2015-10-16/metabolites.txt", delim = "\t")
+
+
+load("../../R/objects/dataTCA.create_datasets.RData")
+load("../../R/objects/dataAA.create_datasets.RData")
+
 
 iMM904[] <- lapply(iMM904, as.character)
 
 load("./data/all_final_models.models.data_prep.RData")
+load("./data/all_linear_models.data_prep.RData")
+load("./data/prediction.intervals.data_prep.RData")
+load("./data/prediction.models.data_prep.RData")
+
+
+proteins.FC <- proteins.matrix.sva.0.5.1.FC
+proteins.FC.f <- proteins.FC %>% 
+  filter(KO %in% unique(exp_metadata$ORF[exp_metadata$type == "Kinase"])) %>%
+  mutate(isiMM904 = ORF %in% unique(as.character(iMM904$gene)))
+
+measured.proteins <- as.character(unique(proteins.FC.f$ORF))
+# measured.proteins <- as.vector((proteins.FC.f %>% filter(isiMM904 ==T ) %>% dplyr::select(ORF) %>% distinct())$ORF)
+
+
+metabolite.order = metabolite.order[with(metabolite.order,order(desc(method),pathway,Order, met_name)),]
 
 ```
 
@@ -90,11 +116,7 @@ ggplot() +
 
 ```{r}
 
-all_linear_models <- all_final_models.models %>% 
-  filter(type == "after",  
-        isImputed == 0 , isAutocorrelation.bonferoni == 0) %>%
-      group_by(metabolite, ismetIncluded, degree) %>% 
-        mutate(the_super_best = adj.r.squared == max(adj.r.squared)) #the best model
+
 
 
 metabolite.order = metabolite.order[with(metabolite.order,order(desc(method),pathway,Order, met_name)),]
@@ -126,111 +148,6 @@ toPlot %>%
 
 ```{r}
 
-met = c("ATP", "ADP", "AMP", "glutamine")
-
-example.models = all_linear_models %>% ungroup() %>% filter(degree == 1, ismetIncluded == 0, the_super_best == T, metabolite %in% met) %>% 
-  group_by(metabolite) %>% summarize(model = model[1],
-                                     type = type[1],
-                                     file = file[1],
-                                     adj.r.squared = adj.r.squared[1],
-                                     median.cv.r2 =  median.cv.r2[1])
-
-tmp.list = list()
-for(i in 1:nrow(example.models)) {
-  tmp.list[[i]] = matrix(t(example.models[i,]), nrow=1)
-}
-
-
-
-
-read_models = function(x) {
-  #x = tmp.list[[1]]
-  file_name = paste(input_path,x[[4]], sep="/") 
-  my_models = get(load(file_name))
-  
-  models = my_models$models
-  
-  fit = models[[as.numeric(x[[2]])]][[x[[3]]]]
-  
-  yhat = predict(fit, fit$model[,-1])
-  
-  table = data.frame(metabolite = x[[1]],
-                     model = x[[2]],
-                     type = x[[3]],
-                     file = x[[4]],
-                     y = fit$model[,1],
-                     yhat = yhat,
-                     adj.r.squared = x[[5]],
-                     median.cv.r2 =  x[[6]],
-                     predictors = paste(names(coefficients(fit)[-1]), collapse = ":"),
-                     coefficients = paste(coefficients(fit)[-1], collapse = ":"),
-                     sample_name = rownames(fit$model))
-  return(table)
-}
-
-read_predictions = function(x) {
-  #x = tmp.list[[2]]
-  file_name = paste(input_path,x[[4]], sep="/") 
-  my_models = get(load(file_name))
-  
-  models = my_models$models
-  
-  fit = models[[as.numeric(x[[2]])]][[x[[3]]]]
-  
-  M = cor(fit$model[,-1])
-  L = chol(M)
-  nvars = dim(L)[1]
-  n_obs = 1000
-  
-  r = t(L) %*% matrix(rnorm(nvars*n_obs, mean = 0, sd = 1), nrow=nvars, ncol=n_obs)
-  r = as.data.frame(t(r))
-  names(r) <- names(fit$model[,-1])
-  
-  #yhat_real = predict(fit, fit$model[,-1])
-  
-  yhat = predict(fit, r)
-  conf = predict(fit, r, interval = "confidence", level = 0.95)
-  pred = predict(fit, r, interval = "prediction", level = 0.95)
-  
-  pred.int <- as.data.frame(cbind(yhat,pred))
-  conf.int <- as.data.frame(cbind(yhat,conf))
-  
-#    g.pred <- ggplot(pred.int, aes(x = yhat, y = fit)) +
-#     theme_bw() +
-#     ggtitle("Prediction interval for future observations from predict()") +
-#     geom_point(data = xy, aes(x = x, y = y)) +
-#     geom_smooth(data = pred.int, aes(ymin = lwr, ymax = upr), stat = "identity") 
-#     #geom_smooth(data = conf.int, aes(ymin = lwr, ymax = upr), stat = "identity", fill="red")
-
-  
-   table = data.frame(metabolite = x[[1]],
-                     model = x[[2]],
-                     type = x[[3]],
-                     file = x[[4]],
-                     yhat = yhat,
-                     conf.lwr = conf.int$lwr,
-                     conf.upr = conf.int$upr,
-                     pred.lwr = pred.int$lwr,
-                     pred.upr = pred.int$upr,
-                     adj.r.squared = x[[5]],
-                     median.cv.r2 =  x[[6]] )
-  return(table)
-}
-
-
-prediction.list = lapply(tmp.list, FUN=read_models)
-prediction.models = do.call(rbind.data.frame, prediction.list)
-
-prediction.models <- prediction.models %>% group_by(metabolite) %>% arrange(y)
-prediction.models$gene = exp_metadata$gene[match(prediction.models$sample_name, exp_metadata$ORF)]
-
-
-prediction.models <- prediction.models %>% 
-  group_by(metabolite) %>% 
-  mutate(ntile20 = ntile(yhat, 20))
-
-simulations.list = lapply(tmp.list, FUN=read_predictions)
-prediction.intervals = do.call(rbind.data.frame, simulations.list)
 
 
 toPlot = prediction.models
@@ -243,7 +160,7 @@ stats.text$y = seq(2,1,length.out=nrow(stats.text))
 toPlot$metabolite = factor(toPlot$metabolite, levels = c("ATP", "ADP", "AMP", "glutamine"))
 prediction.intervals$metabolite = factor(prediction.intervals$metabolite, levels = c("ATP", "ADP", "AMP", "glutamine"))
 
-ggplot(prediction.intervals)+
+ggplot(prediction.intervals) +
   geom_point(data = toPlot, aes(x = yhat, y = y) ) +
   geom_text(data=stats.text, aes(x=x,y=y,label=round(adj.r.squared,2)))+
   facet_wrap(~metabolite, nrow = 1, scale="free") +
@@ -259,8 +176,7 @@ ggplot(prediction.intervals)+
 
 ```{r BRENDA}
 
-brenda <- read.delim("../../data/2015-10-07/brenda.txt")
-load("../../R/objects/sentinels.proteins.matrix.sva.0.5.1.RData")
+
 
 
 ec.gene = unique(gene.annotations[gene.annotations$V3 == "EC number",c(1,4)]) %>% setNames(c("ecNumber", "ORF"))
@@ -269,8 +185,7 @@ ec.gene[] <- lapply(ec.gene,as.character)
 
 brenda.f <- brenda %>% filter(KEGGID != "") %>% filter(!grepl(pattern="mutant|recombinant", x=commentary)) # removing non-native enzymes
 
-load("../../R/objects/dataTCA.create_datasets.RData")
-load("../../R/objects/dataAA.create_datasets.RData")
+
 
 metabolitesTCA.long = reshape2::melt(dataTCA$metabolites) %>% 
   setNames(c("sample", "metabolite_id", "value")) %>%
@@ -353,7 +268,7 @@ ggplot(toPlot, aes(x = isPredictor, y = log(ratio,2))) +
 
 ```{r}
 
-load("../../R/objects/GO.raw._load_.RData")
+
 
 tRNAs <- right_join(orf2name, GO.raw[grep(pattern = "tRNA", x = GO.raw$V10),] %>%  dplyr::select(V2) %>% distinct(), by=c("sgd" = "V2"))
 
