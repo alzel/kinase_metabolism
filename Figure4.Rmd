@@ -47,21 +47,21 @@ options(dplyr.print_min = 6, dplyr.print_max = 6)
 
 
 ```{r figure_data}
-load("../../R/objects/iMM904._load_.RData")
-load("../../R/objects/exp_metadata._clean_.RData")
-load("../../R/objects/orf2name._clean_.RData")
-load("../../R/objects/metabolite2iMM904._load_.RData")
-load("../../R/objects/gene.annotations._load_.RData")
-brenda <- read_delim("../../data/2015-10-07/brenda.txt", delim = "\t")
-load("../../R/objects/sentinels.proteins.matrix.sva.0.5.1.RData")
+load("./data/iMM904._load_.RData")
+load("./data/exp_metadata._clean_.RData")
+load("./data/orf2name._clean_.RData")
+load("./data/metabolite2iMM904._load_.RData")
+load("./data/gene.annotations._load_.RData")
+brenda <- read_delim("./data/brenda.txt", delim = "\t")
+#load("./data/sentinels.proteins.matrix.sva.0.5.1.RData")
 load("./data/proteins.matrix.sva.0.5.1.RData")
 load("./data/proteins.matrix.sva.0.5.1.FC.RData")
-load("../../R/objects/GO.raw._load_.RData")
-metabolite.order <- read_delim("../../data/2015-10-16/metabolites.txt", delim = "\t")
+load("./data/GO.raw._load_.RData")
+metabolite.order <- read_delim("./data/metabolites.txt", delim = "\t")
 
 
-load("../../R/objects/dataTCA.create_datasets.RData")
-load("../../R/objects/dataAA.create_datasets.RData")
+load("./data/dataTCA.create_datasets.RData")
+load("./data/dataAA.create_datasets.RData")
 
 
 iMM904[] <- lapply(iMM904, as.character)
