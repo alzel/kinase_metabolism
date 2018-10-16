@@ -224,9 +224,22 @@ file.copy(figure_files, data_dir)
 
 ```{r Figure4_data}
 
-figure_files = c("../../data/2015-10-16/metabolites.txt")
-file.copy(figure_files, data_dir)
+figure_files = c("../../data/2015-10-16/metabolites.txt",
+                 "../../R/objects/iMM904._load_.RData",
+                 "../../R/objects/exp_metadata._clean_.RData",
+                 "../../R/objects/orf2name._clean_.RData",
+                 "../../R/objects/metabolite2iMM904._load_.RData",
+                 "../../R/objects/gene.annotations._load_.RData",
+                 "../../data/2015-10-07/brenda.txt",
+                 #"../../R/objects/sentinels.proteins.matrix.sva.0.5.1.RData",
+                  "../../R/objects/proteins.matrix.sva.0.5.1.RData",
+                  "../../R/objects/proteins.matrix.sva.0.5.1.FC.RData",
+                  "../../R/objects/GO.raw._load_.RData",
+                  "../../data/2015-10-16/metabolites.txt", 
+                  "../../R/objects/dataTCA.create_datasets.RData",
+                  "../../R/objects/dataAA.create_datasets.RData")
 
+file.copy(figure_files, data_dir)
 
 
 #data for MLR models
@@ -308,9 +321,6 @@ all_final_models.models <- all_final_models.models %>%
                                    isAutocorrelation = ifelse(bg.p.value < auto_thr, 1, 0),
                                    mode = ifelse(coefficients > 0,1,0))
 
-
-#all_final_models.models %>% filter(degree == 1, metabolite == "ATP") %>% View
-
 #selecting best representative model based on adj R2 out of all normalization methods
 all_final_models.models <- all_final_models.models %>% 
   dplyr::filter(type == "after", 
@@ -324,9 +334,6 @@ all_final_models.models = all_final_models.models %>% mutate(varname = orf2name$
                                
 
 all_final_models.models$varname[which(is.na(all_final_models.models$varname))] = as.character(all_final_models.models$variables[is.na(all_final_models.models$varname)])
-
-#tmp.lev = unique(sort(all_final_models.models$varname))
-#all_final_models.models$varname = factor(all_final_models.models$varname, levels=c("stats", tmp.lev[tmp.lev != "stats"]))
 
 all_final_models.models = all_final_models.models %>% mutate(metabolite.label = metabolite2iMM904$official_name[match(metabolite, metabolite2iMM904$id)])
 
@@ -359,7 +366,7 @@ for(i in 1:nrow(example.models)) {
 
 
 read_models = function(x) {
-  #x = tmp.list[[1]]
+  
   file_name = paste(input_path,x[[4]], sep="/") 
   my_models = get(load(file_name))
   
@@ -384,7 +391,7 @@ read_models = function(x) {
 }
 
 read_predictions = function(x) {
-  #x = tmp.list[[2]]
+  
   file_name = paste(input_path,x[[4]], sep="/") 
   my_models = get(load(file_name))
   
@@ -409,15 +416,7 @@ read_predictions = function(x) {
   
   pred.int <- as.data.frame(cbind(yhat,pred))
   conf.int <- as.data.frame(cbind(yhat,conf))
-  
-#    g.pred <- ggplot(pred.int, aes(x = yhat, y = fit)) +
-#     theme_bw() +
-#     ggtitle("Prediction interval for future observations from predict()") +
-#     geom_point(data = xy, aes(x = x, y = y)) +
-#     geom_smooth(data = pred.int, aes(ymin = lwr, ymax = upr), stat = "identity") 
-#     #geom_smooth(data = conf.int, aes(ymin = lwr, ymax = upr), stat = "identity", fill="red")
-
-  
+ 
    table = data.frame(metabolite = x[[1]],
                      model = x[[2]],
                      type = x[[3]],
