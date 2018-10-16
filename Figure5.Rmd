@@ -32,7 +32,7 @@ lst[[length(lst) + 1]] <- obj
 return(lst)
 }
 
-fun_name = "figure4"
+fun_name = "figure5"
 output_dir = "./files"
 dir.create(output_dir, showWarnings = FALSE)
 
@@ -47,10 +47,9 @@ load("../../R/objects/exp_metadata._clean_.RData")
 load("../../R/objects/orf2name._clean_.RData")
 load("../../R/objects/metabolite2iMM904._load_.RData")
 load("../../R/objects/gene.annotations._load_.RData")
-
-
 load("../../R/objects/all_final_models.models_summary2.RData")
 load("../../R/objects/file.list.models_summary2.RData")
+metabolite.order <- read.delim("../../data/2015-10-16/metabolites.txt")
 ```
 
 
@@ -69,7 +68,7 @@ metabolites.models.long <- all_final_models %>%
 
 length(unique(all_final_models$model))
 
-metabolite.order <- read.delim("../../data/2015-10-16/metabolites.txt")
+
 metabolite.order = metabolite.order[with(metabolite.order,order(desc(method),pathway,Order, met_name)),]
 
 
