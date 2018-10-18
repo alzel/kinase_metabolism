@@ -10,6 +10,7 @@ library(tidyverse)
 library(scales)
 library(forcats)
 library(gridExtra)
+library(cluster)
 set.seed(1014)
 options(digits = 3)
 
@@ -224,18 +225,6 @@ toPlot %>%
     theme_bw() +
     theme(legend.position="none")
 
-# p.FCC_hxk2 = ggplot(toPlot %>% filter(parameter == "HXK2"),  aes(x = parameter, y = CC)) +
-#   stat_boxplot(geom ='errorbar', width = 0.5) +
-#   geom_boxplot() +
-#   geom_point(data = toPlot %>% filter(KO == "WT", parameter == "HXK2"), colour = "red", size = 2) +
-#   geom_jitter(alpha = 0.5) +
-#   xlab("") +
-#   ylab(paste("Flux control coeficients of", selected_var)) +
-#   theme_bw() +
-#   theme(aspect.ratio = 5)
-# 
-# grid.arrange(p.FCC_hxk2, p.example_zoom, ncol=2)
-
 
 ```
 
@@ -257,11 +246,8 @@ CCflux_matrix <- dataset.mca %>% filter(var_type == "flux", VAR != "AK", !is.na(
 
 CCfluxes_pca <- prcomp(CCflux_matrix)
 
-library(cluster)
-library(factoextra)
-library(NbClust)
 
-cl <- cluster::pam(CCflux_matrix, 4)
+cl <- pam(CCflux_matrix, 4)
 
 toPlot <- CCfluxes_pca
 
@@ -371,7 +357,7 @@ grid.arrange(p.ss_cor_density, p.ss_cor, ncol=2)
 
 ```
 
-```{r genes_in_parralel, fig.width=12}
+```{r genes_in_parralel}
 
 ref = dataset.mca %>% filter(KO_name == "WT")
 
