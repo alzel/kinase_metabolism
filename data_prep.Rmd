@@ -449,3 +449,17 @@ prediction.intervals = do.call(rbind.data.frame, simulations.list)
 save_object(prediction.models, data_dir)
 save_object(prediction.intervals, data_dir)
 ```
+
+
+```{r Figure5_data}
+figure_files = c("../../R/objects/iMM904._load_.RData",
+                "../../R/objects/exp_metadata._clean_.RData",
+                "../../R/objects/orf2name._clean_.RData",
+                "../../R/objects/metabolite2iMM904._load_.RData",
+                "../../R/objects/gene.annotations._load_.RData",
+                "../../R/objects/all_final_models.models_summary2.RData",
+                "../../R/objects/file.list.models_summary2.RData",
+                "../../data/2015-10-16/metabolites.txt")
+
+file.copy(figure_files, data_dir)
+```
