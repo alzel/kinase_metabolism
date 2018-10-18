@@ -1,69 +1,77 @@
----
-title: "Figure 5 results"
-header-includes: "Machine Learning Regression Predicts the Concentration of Metabolite Pools from Enzyme Abundance"
-author: "Aleksej Zelezniak"
-date: "`r format(Sys.Date())`"
-output: github_document
----
+Figure 5 results
+================
+Aleksej Zelezniak
+2018-10-18
 
+Machine Learning Regression Predicts the Concentration of Metabolite Pools from Enzyme Abundance
 
-```{r setup, echo=FALSE}
+    ## Warning: package 'tidyverse' was built under R version 3.4.2
 
-library(tidyverse)
-library(scales)
-library(forcats)
-library(gridExtra)
-set.seed(1014)
-options(digits = 3)
+    ## -- Attaching packages --------------------------------------------------- tidyverse 1.2.1 --
 
-knitr::opts_chunk$set(
-comment = "#>",
-collapse = TRUE,
-cache = TRUE,
-out.width = "70%",
-fig.align = 'center',
-fig.width = 6,
-fig.asp = 0.618,
-# 1 / phi
-fig.show = "hold",
-dev = c("pdf", "png"),
-warning = F
-)
+    ## <U+221A> ggplot2 2.2.1     <U+221A> purrr   0.2.5
+    ## <U+221A> tibble  1.4.2     <U+221A> dplyr   0.7.6
+    ## <U+221A> tidyr   0.8.1     <U+221A> stringr 1.3.1
+    ## <U+221A> readr   1.1.1     <U+221A> forcats 0.3.0
 
-lappend <- function(lst, obj) {
-lst[[length(lst) + 1]] <- obj
-return(lst)
-}
+    ## Warning: package 'tibble' was built under R version 3.4.3
 
-fun_name = "figure5"
-output_dir = "./files"
-dir.create(output_dir, showWarnings = FALSE)
+    ## Warning: package 'tidyr' was built under R version 3.4.4
 
-options(dplyr.print_min = 6, dplyr.print_max = 6)
+    ## Warning: package 'purrr' was built under R version 3.4.4
 
-```
+    ## Warning: package 'dplyr' was built under R version 3.4.4
 
+    ## Warning: package 'stringr' was built under R version 3.4.4
 
-```{r figure_data}
+    ## Warning: package 'forcats' was built under R version 3.4.3
+
+    ## -- Conflicts ------------------------------------------------------ tidyverse_conflicts() --
+    ## x dplyr::filter() masks stats::filter()
+    ## x dplyr::lag()    masks stats::lag()
+
+    ## Warning: package 'scales' was built under R version 3.4.1
+
+    ## 
+    ## Attaching package: 'scales'
+
+    ## The following object is masked from 'package:purrr':
+    ## 
+    ##     discard
+
+    ## The following object is masked from 'package:readr':
+    ## 
+    ##     col_factor
+
+    ## Warning: package 'gridExtra' was built under R version 3.4.1
+
+    ## 
+    ## Attaching package: 'gridExtra'
+
+    ## The following object is masked from 'package:dplyr':
+    ## 
+    ##     combine
+
+``` r
 #iMM904 yeast metabolic model
 load("./data/iMM904._load_.RData")
 #experiment metadata
 load("./data/exp_metadata._clean_.RData")
 
-#models
+#caret models
 load("./data/all_final_models.models_summary2.RData")
 load("./data/file.list.models_summary2.RData")
 
 #ID maps
-metabolite.order <- read_delim("./data/metabolites.txt", delim = "\t")
+metabolite.order <- read.delim("./data/metabolites.txt")
 load("./data/metabolite2iMM904._load_.RData")
 load("./data/gene.annotations._load_.RData")
 load("./data/orf2name._clean_.RData")
 ```
 
+### Figure 5C
 
-###Figure 5C
-```{r R2_barplot}
+``` r
 
 metabolites.models.long <- all_final_models %>% 
   filter(isImputed == 0, metabolite != "Glu") %>%
@@ -75,6 +83,7 @@ metabolites.models.long <- all_final_models %>%
   filter(Rsquared == max(Rsquared,na.rm = T))
 
 length(unique(all_final_models$model))
+#> [1] 12
 
 
 metabolite.order = metabolite.order[with(metabolite.order,order(desc(method),pathway,Order, met_name)),]
@@ -109,10 +118,12 @@ toPlot %>%
     theme_bw() +
     theme(legend.position="none",
           panel.grid = element_blank())
-
 ```
-###Figure 5B
-```{r distance}
+
+<embed src="Figure5_files/figure-markdown_github/R2_barplot-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+### Figure 5B
+
+``` r
 toPlot.points <- toPlot %>% 
   group_by(metabolite) %>%
   filter(degree == 1) %>%
@@ -132,6 +143,4 @@ toPlot %>%
   
 ```
 
-
-
-
+<embed src="Figure5_files/figure-markdown_github/distance-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />

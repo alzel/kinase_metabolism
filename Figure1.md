@@ -1,49 +1,60 @@
----
-title: "Figure 1  results"
-header-includes: "A Deletion of Each of the 97 Non-essential Yeast Protein Kinases Triggers Broad and Quantitatively Strong Changes in Metabolic Enzyme Expression"
-author: "Aleksej Zelezniak"
-date: "`r format(Sys.Date())`"
-output: github_document
----
+Figure 1 results
+================
+Aleksej Zelezniak
+2018-10-18
 
-```{r setup, echo=F}
+A Deletion of Each of the 97 Non-essential Yeast Protein Kinases Triggers Broad and Quantitatively Strong Changes in Metabolic Enzyme Expression
 
-library(tidyverse)
-library(scales)
-library(forcats)
-library(gridExtra)
-set.seed(1014)
-options(digits = 3)
+    ## Warning: package 'tidyverse' was built under R version 3.4.2
 
+    ## -- Attaching packages ------------------------------------------------------------------------------ tidyverse 1.2.1 --
 
-knitr::opts_chunk$set(
-comment = "#>",
-collapse = TRUE,
-cache = TRUE,
-out.width = "70%",
-fig.align = 'center',
-fig.width = 6,
-fig.asp = 0.618,
-# 1 / phi
-fig.show = "hold",
-dev = c("pdf", "png"),
-warning = F
-)
+    ## <U+221A> ggplot2 2.2.1     <U+221A> purrr   0.2.5
+    ## <U+221A> tibble  1.4.2     <U+221A> dplyr   0.7.6
+    ## <U+221A> tidyr   0.8.1     <U+221A> stringr 1.3.1
+    ## <U+221A> readr   1.1.1     <U+221A> forcats 0.3.0
 
-lappend <- function(lst, obj) {
-lst[[length(lst) + 1]] <- obj
-return(lst)
-}
+    ## Warning: package 'tibble' was built under R version 3.4.3
 
-fun_name = "figure1"
-output_dir = "./files"
-dir.create(output_dir, showWarnings = FALSE)
+    ## Warning: package 'tidyr' was built under R version 3.4.4
 
-options(dplyr.print_min = 6, dplyr.print_max = 6)
+    ## Warning: package 'purrr' was built under R version 3.4.4
 
-```
-####Loading data
-```{r figure_data}
+    ## Warning: package 'dplyr' was built under R version 3.4.4
+
+    ## Warning: package 'stringr' was built under R version 3.4.4
+
+    ## Warning: package 'forcats' was built under R version 3.4.3
+
+    ## -- Conflicts --------------------------------------------------------------------------------- tidyverse_conflicts() --
+    ## x dplyr::filter() masks stats::filter()
+    ## x dplyr::lag()    masks stats::lag()
+
+    ## Warning: package 'scales' was built under R version 3.4.1
+
+    ## 
+    ## Attaching package: 'scales'
+
+    ## The following object is masked from 'package:purrr':
+    ## 
+    ##     discard
+
+    ## The following object is masked from 'package:readr':
+    ## 
+    ##     col_factor
+
+    ## Warning: package 'gridExtra' was built under R version 3.4.1
+
+    ## 
+    ## Attaching package: 'gridExtra'
+
+    ## The following object is masked from 'package:dplyr':
+    ## 
+    ##     combine
+
+#### Loading data
+
+``` r
 #iMM904 yeast metabolic model
 load("./data/iMM904._load_.RData")
 #experiment metadata
@@ -69,12 +80,11 @@ protein.matrix <- proteins.matrix.sva.0.5.1
 proteins.FC <- proteins.matrix.sva.0.5.1.FC
 
 iMM904[] <- lapply(iMM904, as.character)
-
 ```
 
+### Figure 1A
 
-###Figure 1A
-```{r technicalCV}
+``` r
 
 data.raw = protein.matrix
 
@@ -87,6 +97,11 @@ data.long.summary = data.long %>% group_by(ORF, type) %>% dplyr::summarise(CV = 
 
 data.long %>%  distinct(type, sample) %>% group_by(type) %>%
   summarise(n = n())
+#> # A tibble: 2 x 2
+#>    type     n
+#>   <dbl> <int>
+#> 1    0.   364
+#> 2    1.    33
 
 toPlot <- data.long.summary %>% filter(ORF %in% iMM904$gene) %>% arrange(type, CV) %>% 
   group_by(type) %>% 
@@ -108,8 +123,10 @@ toPlot %>%
     scale_x_continuous(labels = scales::percent)
 ```
 
-###Figure 1C
-```{r kegg_coverages}
+<embed src="Figure1_files/figure-markdown_github/technicalCV-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+### Figure 1C
+
+``` r
 
 
 
@@ -169,11 +186,12 @@ ggplot(toPlot, aes(x=B, y=avg, fill=stats)) +
                   labels = c( "Active reactions", "All reactions")) +
   theme_bw() +
   theme(legend.position = c(.66, 0.15)) 
-
-
 ```
-###Figure 1B
-```{r pack_man}
+
+<embed src="Figure1_files/figure-markdown_github/kegg_coverages-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+### Figure 1B
+
+``` r
 coverage_thr <- 0.1 # pathway considered present if at least 10% covered
 
 toPlot <- KEGG.pathways.stats.f %>% 
@@ -201,14 +219,15 @@ ggplot(toPlot, aes(x=stats, y=value, fill = variable)) +
   theme_bw() +
   theme(legend.justification=c(1,0), 
         legend.position="none",
-        legend.key.size	=  unit(0.25, "cm"))+
+        legend.key.size =  unit(0.25, "cm"))+
   xlab("") +
   ylab("")
-
 ```
 
-###Figure 1D
-```{r volcano}
+<embed src="Figure1_files/figure-markdown_github/pack_man-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+### Figure 1D
+
+``` r
 
 
 rowFolds = function(data, groups, reference) {
@@ -347,11 +366,12 @@ p.inset <- proteins.FC.f %>%
   theme(aspect.ratio = 1)
 
 grid.arrange(p.volcano, p.inset, ncol=2)
-
-
 ```
-###Figure 1F
-```{r fraction}
+
+<embed src="Figure1_files/figure-markdown_github/volcano-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+### Figure 1F
+
+``` r
 
 proteins.FC.f.stats <- proteins.FC.f %>% 
   group_by(KO) %>%
@@ -369,12 +389,12 @@ proteins.FC.f.stats  %>%
   ylab("Fraction of metabolic enzymes affected by kinase") +
   theme_bw() +
   theme(aspect.ratio = 1 - 1/3.14)
-
-
 ```
 
-###Figure 1G
-```{r tr_vs_pr}
+<embed src="Figure1_files/figure-markdown_github/fraction-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+### Figure 1G
+
+``` r
 
 transcriptome.FC <- transcriptome.FC %>% dplyr::select(c("ORF", "logFC", "p.value", "p.value_BH", "KO.ORF"))
 transcriptome.FC <- transcriptome.FC %>% dplyr::rename(KO = KO.ORF)
@@ -398,10 +418,12 @@ ggplot(aes(x = cor)) +
   xlab(expression(paste("Pearson correlation between gene and protein expression changes, ", r))) +
   theme_bw() +
   theme(aspect.ratio = 1)
-
 ```
-###Figure 1E
-```{r absolute perturbations}
+
+<embed src="Figure1_files/figure-markdown_github/tr_vs_pr-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+### Figure 1E
+
+``` r
 absolute_dataset <- absolute_dataset %>% mutate(isiMM904 = ORF %in% iMM904$gene)
 
 absolute_dataset.stats <- absolute_dataset %>% 
@@ -443,6 +465,7 @@ counts.stats <- counts %>%
 counts.stats$label = factor(counts.stats$label, levels = as.character(counts.stats$label))
 
 toPlot <- full_join(counts.stats, abs_changes)
+#> Joining, by = "label"
 toPlot$change_percent <- toPlot$change*100
 toPlot <- toPlot %>% arrange(-n)
 toPlot$label = factor(toPlot$label, levels = as.character(toPlot$label))
@@ -462,10 +485,41 @@ ggplot(toPlot, aes(x=label, y=n)) +
   xlab("Kinase mutant") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, face = "italic"), aspect.ratio = 5/8)
-
 ```
 
-
-```{r session}
+<embed src="Figure1_files/figure-markdown_github/absolute perturbations-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+``` r
 sessionInfo()
+#> R version 3.4.0 (2017-04-21)
+#> Platform: x86_64-apple-darwin15.6.0 (64-bit)
+#> Running under: macOS  10.13.5
+#> 
+#> Matrix products: default
+#> BLAS: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRblas.0.dylib
+#> LAPACK: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRlapack.dylib
+#> 
+#> locale:
+#> [1] C
+#> 
+#> attached base packages:
+#> [1] stats     graphics  grDevices utils     datasets  methods   base     
+#> 
+#> other attached packages:
+#>  [1] bindrcpp_0.2.2  gridExtra_2.3   scales_0.5.0    forcats_0.3.0  
+#>  [5] stringr_1.3.1   dplyr_0.7.6     purrr_0.2.5     readr_1.1.1    
+#>  [9] tidyr_0.8.1     tibble_1.4.2    ggplot2_2.2.1   tidyverse_1.2.1
+#> 
+#> loaded via a namespace (and not attached):
+#>  [1] Rcpp_0.12.18     cellranger_1.1.0 pillar_1.2.1     compiler_3.4.0  
+#>  [5] plyr_1.8.4       bindr_0.1.1      tools_3.4.0      digest_0.6.15   
+#>  [9] lubridate_1.7.4  jsonlite_1.5     evaluate_0.10.1  nlme_3.1-131.1  
+#> [13] gtable_0.2.0     lattice_0.20-35  pkgconfig_2.0.1  rlang_0.2.2     
+#> [17] psych_1.8.4      cli_1.0.0        rstudioapi_0.7   yaml_2.2.0      
+#> [21] parallel_3.4.0   haven_1.1.1      xml2_1.2.0       httr_1.3.1      
+#> [25] knitr_1.20       hms_0.4.1        rprojroot_1.3-2  grid_3.4.0      
+#> [29] tidyselect_0.2.4 glue_1.3.0       R6_2.2.2         readxl_1.0.0    
+#> [33] foreign_0.8-69   rmarkdown_1.9    modelr_0.1.1     reshape2_1.4.3  
+#> [37] magrittr_1.5     backports_1.1.2  htmltools_0.3.6  rvest_0.3.2     
+#> [41] assertthat_0.2.0 mnormt_1.5-5     colorspace_1.3-2 stringi_1.2.2   
+#> [45] lazyeval_0.2.1   munsell_0.4.3    broom_0.4.4      crayon_1.3.4
 ```

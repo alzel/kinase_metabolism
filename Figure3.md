@@ -1,60 +1,94 @@
----
-title: "Figure 3  results"
-header-includes: "Enzyme Expression Affects Steady-State Metabolism through Redistributing Flux Control"
-author: "Aleksej Zelezniak"
-date: "`r format(Sys.Date())`"
-output: github_document
----
+Figure 3 results
+================
+Aleksej Zelezniak
+2018-10-18
 
-```{r setup, echo = F}
-library(tidyverse)
-library(scales)
-library(forcats)
-library(gridExtra)
-library(cluster)
-library(ggrepel)
+Enzyme Expression Affects Steady-State Metabolism through Redistributing Flux Control
 
-set.seed(1014)
-options(digits = 3)
+    ## Warning: package 'tidyverse' was built under R version 3.4.2
 
-knitr::opts_chunk$set(
-comment = "#>",
-collapse = TRUE,
-cache = TRUE,
-out.width = "70%",
-fig.align = 'center',
-fig.width = 6,
-fig.asp = 0.618,
-# 1 / phi
-fig.show = "hold",
-dev = c("pdf", "png"),
-warning = F
-)
+    ## -- Attaching packages --------------------------------------------------- tidyverse 1.2.1 --
 
-lappend <- function(lst, obj) {
-lst[[length(lst) + 1]] <- obj
-return(lst)
-}
+    ## <U+221A> ggplot2 2.2.1     <U+221A> purrr   0.2.5
+    ## <U+221A> tibble  1.4.2     <U+221A> dplyr   0.7.6
+    ## <U+221A> tidyr   0.8.1     <U+221A> stringr 1.3.1
+    ## <U+221A> readr   1.1.1     <U+221A> forcats 0.3.0
 
-fun_name = "figure3"
-output_dir = "./files"
-dir.create(output_dir, showWarnings = FALSE)
+    ## Warning: package 'tibble' was built under R version 3.4.3
 
-options(dplyr.print_min = 6, dplyr.print_max = 6)
+    ## Warning: package 'tidyr' was built under R version 3.4.4
 
-```
+    ## Warning: package 'purrr' was built under R version 3.4.4
 
+    ## Warning: package 'dplyr' was built under R version 3.4.4
 
-```{r figure_data}
+    ## Warning: package 'stringr' was built under R version 3.4.4
+
+    ## Warning: package 'forcats' was built under R version 3.4.3
+
+    ## -- Conflicts ------------------------------------------------------ tidyverse_conflicts() --
+    ## x dplyr::filter() masks stats::filter()
+    ## x dplyr::lag()    masks stats::lag()
+
+    ## Warning: package 'scales' was built under R version 3.4.1
+
+    ## 
+    ## Attaching package: 'scales'
+
+    ## The following object is masked from 'package:purrr':
+    ## 
+    ##     discard
+
+    ## The following object is masked from 'package:readr':
+    ## 
+    ##     col_factor
+
+    ## Warning: package 'gridExtra' was built under R version 3.4.1
+
+    ## 
+    ## Attaching package: 'gridExtra'
+
+    ## The following object is masked from 'package:dplyr':
+    ## 
+    ##     combine
+
+``` r
 
 load("./data/exp_metadata._clean_.RData")
 
 #dataset of control coefficients
 flux_mca <- read_delim("./data/mca_fluxes_in_kinase_KOs.csv", delim = "\t")
+#> Parsed with column specification:
+#> cols(
+#>   CC = col_double(),
+#>   KO = col_character(),
+#>   n_changes = col_double(),
+#>   parameter = col_character(),
+#>   var_type = col_character(),
+#>   variable = col_character()
+#> )
 conc_mca <- read_delim("./data/mca_conc_in_kinase_KOs.csv", delim = "\t")
+#> Parsed with column specification:
+#> cols(
+#>   CC = col_double(),
+#>   KO = col_character(),
+#>   n_changes = col_double(),
+#>   parameter = col_character(),
+#>   var_type = col_character(),
+#>   variable = col_character()
+#> )
 
 # steady-state concentrations
 dataset.ss <- read_delim("./data/ss_fluxes_concentrations_in_kinase_KOs.csv", delim = "\t")
+#> Parsed with column specification:
+#> cols(
+#>   variable = col_character(),
+#>   type = col_character(),
+#>   value = col_double(),
+#>   KO = col_character(),
+#>   ss_status = col_double(),
+#>   n_changes = col_integer()
+#> )
 
 # metabolite concentration daata
 load("./data/dataPPP_AA.create_datasets.RData")
@@ -145,13 +179,12 @@ T6P
 ADP
 ATP
 NAD') %>% str_split("\n") %>% unlist()
-
-
 ```
 
+Figure 3A
+=========
 
-###Figure 3A
-```{r overal_FCC}
+``` r
 
 
 total_kinases = nrow(dataset.mca %>% ungroup() %>% distinct(KO)) - 1
@@ -179,12 +212,13 @@ mca_overal %>%
     xlab("Change of enzymes overall control of the fluxes/concentrations\nin kinase mutant in contrast to WT") +
     facet_wrap(~var_type, scales = "free") +
     theme_bw(base_family = "Helvetica")
-
 ```
 
+<embed src="Figure3_files/figure-markdown_github/overal_FCC-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+Figure 3A(insets)
+=================
 
-###Figure 3A(insets)
-```{r steady-state}
+``` r
 ## -- Steady-concentration fluxes ----
 
 WT.ss <- dataset.ss %>% filter(KO == "WT")
@@ -209,9 +243,11 @@ dataset.ss %>%
     theme(panel.grid = element_blank())
 ```
 
+<embed src="Figure3_files/figure-markdown_github/steady-state-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+Figure 3B
+=========
 
-###Figure 3B
-```{r ADH_ADH1}
+``` r
 selected_var = "ADH_ADH1"
 toPlot <- dataset.mca %>% ungroup() %>%
   filter(VAR == selected_var, var_type == "flux") %>%
@@ -228,12 +264,13 @@ toPlot %>%
     geom_point(data = toPlot %>% filter(KO == "WT"), colour = "red", size = 2) +
     theme_bw() +
     theme(legend.position="none")
-
-
 ```
 
-###Figure 3C
-```{r PCA_FCC}
+<embed src="Figure3_files/figure-markdown_github/ADH_ADH1-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+Figure 3C
+=========
+
+``` r
 
 #small helper to tidy data for pca
 tidy_pca = function(x) {
@@ -295,10 +332,12 @@ p.strongest <- dataset.mca %>% filter(var_type == "flux", VAR != "AK", !is.na(CC
           aspect.ratio = 1)
 
 grid.arrange(p.pca, p.strongest, ncol=2)
-
 ```
-###Figure 3F and G
-```{r steady_state_kinetics}
+
+<embed src="Figure3_files/figure-markdown_github/PCA_FCC-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+``` r
+
+
 
 dataset.ss_conc <- dataset.ss %>% filter(type == "conc", ss_status < 1e-6)
 dataset_metabolites <- dataPPP_AA$metabolites %>% reshape2::melt(id.vars = rownames())
@@ -356,11 +395,10 @@ p.ss_cor <- toPlot %>%
          concentration, standartized value")
 
 grid.arrange(p.ss_cor_density, p.ss_cor, ncol=2)
-
 ```
 
-###Figure 3H
-```{r genes_in_parralel}
+<embed src="Figure3_files/figure-markdown_github/steady_state_kinetics-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+``` r
 
 ref = dataset.mca %>% filter(KO_name == "WT")
 
@@ -378,7 +416,8 @@ toPlot <- dataset.mca_FC %>%
   dplyr::mutate(cuts = cut(median_change_CC, breaks = c(0, 0.25, 0.5, 0.75, 1)),
                 var_type = fct_relevel(var_type, c("flux", "conc")))
   
-
+  
+library(ggrepel)
 toPlot %>% 
   ggplot(aes(x = cuts, y = n_changes + jitter)) +
     stat_boxplot(geom = "errorbar", width = 0.33) +
@@ -389,8 +428,6 @@ toPlot %>%
     ylab("Fraction of changed enzymes in ODE model") +
     xlab("Median change of control coefficient across all\nparameters and reactions per mutant") +
     theme_bw() + theme(aspect.ratio = 5/8) + coord_flip()
-
-
 ```
 
-
+<embed src="Figure3_files/figure-markdown_github/genes_in_parralel-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />

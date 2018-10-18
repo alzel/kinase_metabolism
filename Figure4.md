@@ -1,52 +1,58 @@
----
-title: "Figure 4 results"
-header-includes: "Multiple Linear Regression Identifies Multivariate Metabolite-Enzyme Relationships That Are Informative about Metabolite Concentration"
-author: "Aleksej Zelezniak"
-date: "`r format(Sys.Date())`"
-output: github_document
----
+Figure 4 results
+================
+Aleksej Zelezniak
+2018-10-18
 
+Multiple Linear Regression Identifies Multivariate Metabolite-Enzyme Relationships That Are Informative about Metabolite Concentration
 
+    ## Warning: package 'tidyverse' was built under R version 3.4.2
 
-```{r setup, echo = F}
+    ## -- Attaching packages ------------------------------------------------------------------------------ tidyverse 1.2.1 --
 
-library(tidyverse)
-library(scales)
-library(forcats)
-library(gridExtra)
-library(ggthemes)
-set.seed(1014)
-options(digits = 3)
+    ## <U+221A> ggplot2 2.2.1     <U+221A> purrr   0.2.5
+    ## <U+221A> tibble  1.4.2     <U+221A> dplyr   0.7.6
+    ## <U+221A> tidyr   0.8.1     <U+221A> stringr 1.3.1
+    ## <U+221A> readr   1.1.1     <U+221A> forcats 0.3.0
 
-knitr::opts_chunk$set(
-comment = "#>",
-collapse = TRUE,
-cache = TRUE,
-out.width = "70%",
-fig.align = 'center',
-fig.width = 6,
-fig.asp = 0.618,
-# 1 / phi
-fig.show = "hold",
-dev = c("pdf", "png"),
-warning = F
-)
+    ## Warning: package 'tibble' was built under R version 3.4.3
 
-lappend <- function(lst, obj) {
-lst[[length(lst) + 1]] <- obj
-return(lst)
-}
+    ## Warning: package 'tidyr' was built under R version 3.4.4
 
-fun_name = "figure4"
-output_dir = "./files"
-dir.create(output_dir, showWarnings = FALSE)
-options(dplyr.print_min = 6, dplyr.print_max = 6)
+    ## Warning: package 'purrr' was built under R version 3.4.4
 
-```
+    ## Warning: package 'dplyr' was built under R version 3.4.4
 
+    ## Warning: package 'stringr' was built under R version 3.4.4
 
+    ## Warning: package 'forcats' was built under R version 3.4.3
 
-```{r figure_data}
+    ## -- Conflicts --------------------------------------------------------------------------------- tidyverse_conflicts() --
+    ## x dplyr::filter() masks stats::filter()
+    ## x dplyr::lag()    masks stats::lag()
+
+    ## Warning: package 'scales' was built under R version 3.4.1
+
+    ## 
+    ## Attaching package: 'scales'
+
+    ## The following object is masked from 'package:purrr':
+    ## 
+    ##     discard
+
+    ## The following object is masked from 'package:readr':
+    ## 
+    ##     col_factor
+
+    ## Warning: package 'gridExtra' was built under R version 3.4.1
+
+    ## 
+    ## Attaching package: 'gridExtra'
+
+    ## The following object is masked from 'package:dplyr':
+    ## 
+    ##     combine
+
+``` r
 #iMM904 yeast metabolic model
 load("./data/iMM904._load_.RData")
 
@@ -54,6 +60,18 @@ load("./data/iMM904._load_.RData")
 load("./data/exp_metadata._clean_.RData")
 
 brenda <- read_delim("./data/brenda.txt", delim = "\t")
+#> Parsed with column specification:
+#> cols(
+#>   ecNumber = col_character(),
+#>   kmValue = col_double(),
+#>   kmValueMaximum = col_double(),
+#>   substrate = col_character(),
+#>   KEGGID = col_character(),
+#>   commentary = col_character(),
+#>   organism = col_character(),
+#>   ligandStructureId = col_integer(),
+#>   literature = col_character()
+#> )
 
 #protein data
 load("./data/proteins.matrix.sva.0.5.1.RData")
@@ -78,6 +96,14 @@ proteins.FC.f <- proteins.FC %>%
 
 #ID maps
 metabolite.order <- read_delim("./data/metabolites.txt", delim = "\t")
+#> Parsed with column specification:
+#> cols(
+#>   met_name = col_character(),
+#>   metabolite = col_character(),
+#>   pathway = col_character(),
+#>   method = col_character(),
+#>   Order = col_integer()
+#> )
 load("./data/orf2name._clean_.RData")
 load("./data/metabolite2iMM904._load_.RData")
 load("./data/gene.annotations._load_.RData")
@@ -88,10 +114,9 @@ iMM904[] <- lapply(iMM904, as.character)
 
 measured.proteins <- as.character(unique(proteins.FC.f$ORF))
 metabolite.order = metabolite.order[with(metabolite.order,order(desc(method),pathway,Order, met_name)),]
-
 ```
-#
-```{r}
+
+``` r
 metabolite.order = metabolite.order[with(metabolite.order,order(desc(method),pathway,Order, met_name)),]
 
 toPlot = all_linear_models %>% ungroup() %>% 
@@ -116,12 +141,12 @@ toPlot %>%
           legend.position=c(-0.1,0),
           panel.grid = element_blank()) +
     ylab("Explained variance of metabolite concentrations\nusing proteome data, adj. R2")
-
 ```
 
+<embed src="Figure4_files/figure-markdown_github/unnamed-chunk-1-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+### Related to Figure 4B and Figure S15
 
-###Related to Figure 4B and Figure S15
-```{r predictors_mlr, fig.width=15, fig.asp=1.44}
+``` r
 
 
 selected_models  = dplyr::filter(all_final_models.models, type == "after", 
@@ -144,10 +169,10 @@ ggplot() +
   scale_color_discrete(name="Predictor's effect",
                        breaks = c(0, 1),
                        labels = c("negative", "positive") )
-
 ```
 
-```{r}
+<embed src="Figure4_files/figure-markdown_github/predictors_mlr-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+``` r
 
 
 
@@ -173,9 +198,10 @@ ggplot(prediction.intervals) +
   theme(aspect.ratio = 1)
 ```
 
-###Figure 4G
+<embed src="Figure4_files/figure-markdown_github/unnamed-chunk-2-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+### Figure 4G
 
-```{r BRENDA}
+``` r
 
 
 ec.gene = unique(gene.annotations[gene.annotations$V3 == "EC number",c(1,4)]) %>% setNames(c("ecNumber", "ORF"))
@@ -218,6 +244,7 @@ brenda_dataset <- metabolites.long %>% ungroup() %>%
   filter(ORF %in% measured.proteins, ORF %in% unique(iMM904$gene)) %>%
   left_join(models.summary %>% ungroup() %>% select(metabolite, variables) %>% cbind(isPredictor = T), by = c("ORF" = "variables", "metabolite_id" = "metabolite")) %>%
   mutate(isPredictor = ifelse(is.na(isPredictor), F, T))
+#> Joining, by = "ecNumber"
   
 brenda_dataset <- brenda_dataset %>% filter(kmValue > 0)
 brenda_dataset <- brenda_dataset %>% mutate(label = metabolite2iMM904$official_name[match(KEGGID, metabolite2iMM904$kegg_id)])
@@ -239,12 +266,12 @@ ggplot() +
   geom_vline(xintercept = 0) +
   theme_bw() +
   theme( legend.position = c(0.7,0.7))
-
 ```
 
+<embed src="Figure4_files/figure-markdown_github/BRENDA-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+### Figure 4F
 
-###Figure 4F
-```{r violin_boxplot, fig.width=10}
+``` r
 # ### ratio whether it is predictor of not
 a = (brenda_dataset %>% filter(isPredictor == F) %>% dplyr::select(ratio))$ratio
 b = (brenda_dataset %>% filter(isPredictor == T) %>% dplyr::select(ratio))$ratio
@@ -262,10 +289,10 @@ ggplot(toPlot, aes(x = isPredictor, y = log(ratio,2))) +
  theme(aspect.ratio = 8/3)
 ```
 
+<embed src="Figure4_files/figure-markdown_github/violin_boxplot-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+### Figure 4H
 
-
-###Figure 4H
-```{r AA_saturation}
+``` r
 
 tRNAs <- right_join(orf2name, GO.raw[grep(pattern = "tRNA", x = GO.raw$V10),] %>%  dplyr::select(V2) %>% distinct(), by=c("sgd" = "V2"))
 
@@ -329,7 +356,7 @@ toPlot %>%
           panel.grid = element_blank(),
           axis.text.y = element_blank(),
           axis.ticks.y = element_blank())
-
-
 ```
 
+<embed src="Figure4_files/figure-markdown_github/AA_saturation-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+<embed src="Figure4_files/figure-markdown_github/AA_saturation-2.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />

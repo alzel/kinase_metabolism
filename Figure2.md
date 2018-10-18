@@ -1,54 +1,67 @@
----
-title: "Figure 2 results"
-header-includes: "The Deletion of Each Yeast Kinase Triggers a Unique Reconfiguration of Enzyme Expression in the Cell"
-author: "Aleksej Zelezniak"
-date: "`r format(Sys.Date())`"
-output: github_document
----
+Figure 2 results
+================
+Aleksej Zelezniak
+2018-10-18
 
-```{r setup, echo=F}
-library(tidyverse)
-library(scales)
-library(forcats)
-library(gridExtra)
-library(reshape2)
-library(RColorBrewer)
-library(ggthemes)
-library(cluster)
+The Deletion of Each Yeast Kinase Triggers a Unique Reconfiguration of Enzyme Expression in the Cell
 
-set.seed(1014)
-options(digits = 3)
+    ## Warning: package 'tidyverse' was built under R version 3.4.2
 
-knitr::opts_chunk$set(
-comment = "#>",
-collapse = TRUE,
-cache = TRUE,
-out.width = "70%",
-fig.align = 'center',
-fig.width = 6,
-fig.asp = 0.618,
-# 1 / phi
-fig.show = "hold",
-dev = c("pdf", "png"),
-warning = F
-)
+    ## -- Attaching packages --------------------------------------------------- tidyverse 1.2.1 --
 
-lappend <- function(lst, obj) {
-  lst[[length(lst) + 1]] <- obj
-  return(lst)
-}
+    ## <U+221A> ggplot2 2.2.1     <U+221A> purrr   0.2.5
+    ## <U+221A> tibble  1.4.2     <U+221A> dplyr   0.7.6
+    ## <U+221A> tidyr   0.8.1     <U+221A> stringr 1.3.1
+    ## <U+221A> readr   1.1.1     <U+221A> forcats 0.3.0
 
-fun_name = "figure2"
-output_dir = "./files"
-dir.create(output_dir, showWarnings = FALSE)
+    ## Warning: package 'tibble' was built under R version 3.4.3
 
-source("./functions.R")
+    ## Warning: package 'tidyr' was built under R version 3.4.4
 
-#options(dplyr.print_min = 6, dplyr.print_max = 6)
+    ## Warning: package 'purrr' was built under R version 3.4.4
 
-```
+    ## Warning: package 'dplyr' was built under R version 3.4.4
 
-```{r figure_data}
+    ## Warning: package 'stringr' was built under R version 3.4.4
+
+    ## Warning: package 'forcats' was built under R version 3.4.3
+
+    ## -- Conflicts ------------------------------------------------------ tidyverse_conflicts() --
+    ## x dplyr::filter() masks stats::filter()
+    ## x dplyr::lag()    masks stats::lag()
+
+    ## Warning: package 'scales' was built under R version 3.4.1
+
+    ## 
+    ## Attaching package: 'scales'
+
+    ## The following object is masked from 'package:purrr':
+    ## 
+    ##     discard
+
+    ## The following object is masked from 'package:readr':
+    ## 
+    ##     col_factor
+
+    ## Warning: package 'gridExtra' was built under R version 3.4.1
+
+    ## 
+    ## Attaching package: 'gridExtra'
+
+    ## The following object is masked from 'package:dplyr':
+    ## 
+    ##     combine
+
+    ## Warning: package 'reshape2' was built under R version 3.4.3
+
+    ## 
+    ## Attaching package: 'reshape2'
+
+    ## The following object is masked from 'package:tidyr':
+    ## 
+    ##     smiths
+
+``` r
 
 load("./data/proteins.matrix.sva.0.5.1.RData")
 load("./data/proteins.matrix.sva.0.5.1.FC.RData")
@@ -74,10 +87,11 @@ uniprot2orf <- gene.annotations %>%
 uniprot2orf[] <- lapply(uniprot2orf[], as.character)
 
 uniprot2orf.kinases <- uniprot2orf %>% filter(ORF %in% kinase_orfs)
-
 ```
-###Figure 2A
-```{r heatmap, fig.width=15}
+
+### Figure 2A
+
+``` r
 
 reference = unique(as.character(proteins.FC$reference))
 pval_thr = 0.01
@@ -177,10 +191,12 @@ ggplot(toPlot) +
         axis.text.y = element_text(face = "italic"), 
         aspect.ratio = 1, legend.position = c(0.2, 0.8) ) +
   labs(x="", y = "")
-
 ```
-###Figure 2B
-```{r barplot}
+
+<embed src="Figure2_files/figure-markdown_github/heatmap-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+### Figure 2B
+
+``` r
 
 combinations <- combn(unique(proteins.FC.f.metabolic$KO), 2)
 combinations.df <- as.data.frame(t(combinations))
@@ -229,11 +245,14 @@ ggplot() +
   theme_few() +
   theme(legend.position = c(0.1, 0.7),
         axis.text.x = element_text(angle = 90, hjust = 1))
-
 ```
-###Related Figure 2C and Figure 2D
+
+<embed src="Figure2_files/figure-markdown_github/barplot-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+### Related Figure 2C and Figure 2D
+
 All the rest plot related to C and D panels as well to Figure S8 amd Figure S9
-```{r}
+
+``` r
 #data prep for similarities 
 similarities.long <- list()
 tmp <- melt(d.matrix.up)
@@ -305,14 +324,16 @@ similarities_dataset %>%
   ggplot(aes(x = value)) +
     geom_histogram() +
     facet_wrap(~type, scales = "free")
-    
+#> `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 ```
 
-#Pathway co-expression
+<embed src="Figure2_files/figure-markdown_github/unnamed-chunk-1-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+Pathway co-expression
+=====================
 
 clearning data for similarity histograms
 
-```{r similarity_cleaning}
+``` r
 
 
 names(UniProt2Reactome) <- c("uniprot_id", "reactome_id", "url", "description", "confidence", "species")
@@ -347,14 +368,13 @@ uniprot2kegg <- uniprot2kegg %>% mutate(pathway_base = "kegg")
 uniprot2reactome <- uniprot2reactome %>% mutate(pathway_base = "reactome")
 
 pathway_kinases <- bind_rows(uniprot2kegg, uniprot2reactome)
-
 ```
 
-* In KEGG there are `r nrow(uniprot2kegg %>% distinct(pathway))` pathways with more than 2 kinase members, in total mapped to `r nrow(uniprot2kegg %>% distinct(uniprot_id))` kinases
-* In Reactome there are `r nrow(uniprot2reactome %>% ungroup() %>% distinct(pathway))` pathways with more than 2 kinase members, in total mapped to `r nrow(uniprot2reactome %>% ungroup() %>% distinct(uniprot_id))` kinases
-* In total `r length(unique(pathway_kinases$uniprot_id))` kinases are mapped to pathways
+-   In KEGG there are 4 pathways with more than 2 kinase members, in total mapped to 37 kinases
+-   In Reactome there are 38 pathways with more than 2 kinase members, in total mapped to 29 kinases
+-   In total 49 kinases are mapped to pathways
 
-```{r}
+``` r
 
 getPathwaySimilarity <- function(pathways) {
   ret = plyr::ddply(pathways, plyr::.(pathway, pathway_base), 
@@ -396,6 +416,8 @@ pathway_kinases_random <- plyr::ddply(pathway_kinases,
                                                            uniprot_id = z$value,
                                                            n = z$n))
                                     })
+#> Adding missing grouping variables: `pathway`
+#> Adding missing grouping variables: `pathway`
 
 
 
@@ -442,11 +464,11 @@ file_name = paste("fig2_D", fun_name, sep = ".")
 file_path = paste(output_dir, file_name, sep="/")
 
 ggsave(filename = paste(file_path, "pdf", sep = "."), device = "pdf", plot = p) 
-
-
+#> Saving 6 x 3.71 in image
 ```
 
-```{r no_frequent_pairs}
+<embed src="Figure2_files/figure-markdown_github/unnamed-chunk-2-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+``` r
 pathway_similarities$sorted_pair <- apply(pathway_similarities[ ,c("X1", "X2")] , 1 , 
                                           FUN = function(x) {
                                             paste(sort(c(x[1], x[2])), collapse = "|")
@@ -458,6 +480,7 @@ pathway_similarities %>% filter(type == "pearson_fc") %>%
   ggplot(aes(x = n)) +
     geom_histogram() +
     facet_wrap(~pathway_base, scales = "free")
+#> `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
 
 toPlot <- pathways_dataset %>% filter(!(X1 %in% c("P12688", "P18961")), !(X2 %in% c("P12688", "P18961")))
@@ -478,11 +501,45 @@ toPlot %>%
     geom_vline(data = toPlot.stats.medians, aes(xintercept = median_value, colour = sample_type), linetype = 2) +
     # theme_bw() + 
     theme(legend.position = c(0.1, 0.5), aspect.ratio = 5/8)  
-
-
-
 ```
 
-```{r}
+<embed src="Figure2_files/figure-markdown_github/no_frequent_pairs-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+<embed src="Figure2_files/figure-markdown_github/no_frequent_pairs-2.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+``` r
 sessionInfo()
+#> R version 3.4.0 (2017-04-21)
+#> Platform: x86_64-apple-darwin15.6.0 (64-bit)
+#> Running under: macOS  10.13.5
+#> 
+#> Matrix products: default
+#> BLAS: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRblas.0.dylib
+#> LAPACK: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRlapack.dylib
+#> 
+#> locale:
+#> [1] C
+#> 
+#> attached base packages:
+#> [1] stats     graphics  grDevices utils     datasets  methods   base     
+#> 
+#> other attached packages:
+#>  [1] bindrcpp_0.2.2     cluster_2.0.6      ggthemes_3.4.0    
+#>  [4] RColorBrewer_1.1-2 reshape2_1.4.3     gridExtra_2.3     
+#>  [7] scales_0.5.0       forcats_0.3.0      stringr_1.3.1     
+#> [10] dplyr_0.7.6        purrr_0.2.5        readr_1.1.1       
+#> [13] tidyr_0.8.1        tibble_1.4.2       ggplot2_2.2.1     
+#> [16] tidyverse_1.2.1   
+#> 
+#> loaded via a namespace (and not attached):
+#>  [1] tidyselect_0.2.4 haven_1.1.1      lattice_0.20-35  colorspace_1.3-2
+#>  [5] htmltools_0.3.6  yaml_2.2.0       rlang_0.2.2      pillar_1.2.1    
+#>  [9] foreign_0.8-69   glue_1.3.0       modelr_0.1.1     readxl_1.0.0    
+#> [13] bindr_0.1.1      plyr_1.8.4       munsell_0.4.3    gtable_0.2.0    
+#> [17] cellranger_1.1.0 rvest_0.3.2      psych_1.8.4      evaluate_0.10.1 
+#> [21] knitr_1.20       parallel_3.4.0   broom_0.4.4      Rcpp_0.12.18    
+#> [25] backports_1.1.2  jsonlite_1.5     mnormt_1.5-5     hms_0.4.1       
+#> [29] digest_0.6.15    stringi_1.2.2    grid_3.4.0       rprojroot_1.3-2 
+#> [33] cli_1.0.0        tools_3.4.0      magrittr_1.5     lazyeval_0.2.1  
+#> [37] crayon_1.3.4     pkgconfig_2.0.1  xml2_1.2.0       lubridate_1.7.4 
+#> [41] assertthat_0.2.0 rmarkdown_1.9    httr_1.3.1       rstudioapi_0.7  
+#> [45] R6_2.2.2         nlme_3.1-131.1   compiler_3.4.0
 ```
