@@ -393,4 +393,7 @@ toPlot %>%
 
 ```
 
+```{r session}
+sessionInfo()
+```
 

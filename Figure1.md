@@ -421,7 +421,9 @@ ggplot(aes(x = cor)) +
   theme(aspect.ratio = 1)
 ```
 
-<img src="Figure1_files/figure-markdown_github/tr_vs_pr-1.png" width="70%" style="display: block; margin: auto;" /> \#\#\#Figure 1E
+<img src="Figure1_files/figure-markdown_github/tr_vs_pr-1.png" width="70%" style="display: block; margin: auto;" />
+
+### Figure 1E
 
 ``` r
 absolute_dataset <- absolute_dataset %>% mutate(isiMM904 = ORF %in% iMM904$gene)

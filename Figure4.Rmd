@@ -333,3 +333,7 @@ toPlot %>%
 
 ```
 
+```{r session}
+sessionInfo()
+```
+

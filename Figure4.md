@@ -364,3 +364,40 @@ toPlot %>%
 ```
 
 <img src="Figure4_files/figure-markdown_github/AA_saturation-1.png" width="70%" style="display: block; margin: auto;" /><img src="Figure4_files/figure-markdown_github/AA_saturation-2.png" width="70%" style="display: block; margin: auto;" />
+
+``` r
+sessionInfo()
+#> R version 3.4.0 (2017-04-21)
+#> Platform: x86_64-apple-darwin15.6.0 (64-bit)
+#> Running under: macOS  10.13.5
+#> 
+#> Matrix products: default
+#> BLAS: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRblas.0.dylib
+#> LAPACK: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRlapack.dylib
+#> 
+#> locale:
+#> [1] C
+#> 
+#> attached base packages:
+#> [1] stats     graphics  grDevices utils     datasets  methods   base     
+#> 
+#> other attached packages:
+#>  [1] bindrcpp_0.2.2  ggthemes_3.4.0  gridExtra_2.3   scales_0.5.0   
+#>  [5] forcats_0.3.0   stringr_1.3.1   dplyr_0.7.6     purrr_0.2.5    
+#>  [9] readr_1.1.1     tidyr_0.8.1     tibble_1.4.2    ggplot2_2.2.1  
+#> [13] tidyverse_1.2.1
+#> 
+#> loaded via a namespace (and not attached):
+#>  [1] Rcpp_0.12.18     cellranger_1.1.0 pillar_1.2.1     compiler_3.4.0  
+#>  [5] plyr_1.8.4       bindr_0.1.1      tools_3.4.0      digest_0.6.15   
+#>  [9] lubridate_1.7.4  jsonlite_1.5     evaluate_0.10.1  nlme_3.1-131.1  
+#> [13] gtable_0.2.0     lattice_0.20-35  pkgconfig_2.0.1  rlang_0.2.2     
+#> [17] psych_1.8.4      cli_1.0.0        rstudioapi_0.7   yaml_2.2.0      
+#> [21] parallel_3.4.0   haven_1.1.1      xml2_1.2.0       httr_1.3.1      
+#> [25] knitr_1.20       hms_0.4.1        rprojroot_1.3-2  grid_3.4.0      
+#> [29] tidyselect_0.2.4 glue_1.3.0       R6_2.2.2         readxl_1.0.0    
+#> [33] foreign_0.8-69   rmarkdown_1.9    modelr_0.1.1     reshape2_1.4.3  
+#> [37] magrittr_1.5     backports_1.1.2  htmltools_0.3.6  rvest_0.3.2     
+#> [41] assertthat_0.2.0 mnormt_1.5-5     colorspace_1.3-2 stringi_1.2.2   
+#> [45] lazyeval_0.2.1   munsell_0.4.3    broom_0.4.4      crayon_1.3.4
+```

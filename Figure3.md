@@ -1,13 +1,13 @@
 Figure 3 results
 ================
 Aleksej Zelezniak
-2018-10-18
+2018-10-19
 
 Enzyme Expression Affects Steady-State Metabolism through Redistributing Flux Control
 
     ## Warning: package 'tidyverse' was built under R version 3.4.2
 
-    ## -- Attaching packages --------------------------------------------------- tidyverse 1.2.1 --
+    ## -- Attaching packages ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ tidyverse 1.2.1 --
 
     ## <U+221A> ggplot2 2.2.1     <U+221A> purrr   0.2.5
     ## <U+221A> tibble  1.4.2     <U+221A> dplyr   0.7.6
@@ -26,7 +26,7 @@ Enzyme Expression Affects Steady-State Metabolism through Redistributing Flux Co
 
     ## Warning: package 'forcats' was built under R version 3.4.3
 
-    ## -- Conflicts ------------------------------------------------------ tidyverse_conflicts() --
+    ## -- Conflicts --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- tidyverse_conflicts() --
     ## x dplyr::filter() masks stats::filter()
     ## x dplyr::lag()    masks stats::lag()
 
@@ -51,6 +51,8 @@ Enzyme Expression Affects Steady-State Metabolism through Redistributing Flux Co
     ## The following object is masked from 'package:dplyr':
     ## 
     ##     combine
+
+    ## Warning: package 'ggrepel' was built under R version 3.4.4
 
 ``` r
 
@@ -181,8 +183,7 @@ ATP
 NAD') %>% str_split("\n") %>% unlist()
 ```
 
-Figure 3A
-=========
+### Figure 3A
 
 ``` r
 
@@ -214,9 +215,9 @@ mca_overal %>%
     theme_bw(base_family = "Helvetica")
 ```
 
-<embed src="Figure3_files/figure-markdown_github/overal_FCC-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
-Figure 3A(insets)
-=================
+<img src="Figure3_files/figure-markdown_github/overal_FCC-1.png" width="70%" style="display: block; margin: auto;" />
+
+### Figure 3A(insets)
 
 ``` r
 ## -- Steady-concentration fluxes ----
@@ -243,9 +244,9 @@ dataset.ss %>%
     theme(panel.grid = element_blank())
 ```
 
-<embed src="Figure3_files/figure-markdown_github/steady-state-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
-Figure 3B
-=========
+<img src="Figure3_files/figure-markdown_github/steady-state-1.png" width="70%" style="display: block; margin: auto;" />
+
+### Figure 3B
 
 ``` r
 selected_var = "ADH_ADH1"
@@ -266,9 +267,9 @@ toPlot %>%
     theme(legend.position="none")
 ```
 
-<embed src="Figure3_files/figure-markdown_github/ADH_ADH1-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
-Figure 3C
-=========
+<img src="Figure3_files/figure-markdown_github/ADH_ADH1-1.png" width="70%" style="display: block; margin: auto;" />
+
+### Figure 3C
 
 ``` r
 
@@ -334,10 +335,9 @@ p.strongest <- dataset.mca %>% filter(var_type == "flux", VAR != "AK", !is.na(CC
 grid.arrange(p.pca, p.strongest, ncol=2)
 ```
 
-<embed src="Figure3_files/figure-markdown_github/PCA_FCC-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+<img src="Figure3_files/figure-markdown_github/PCA_FCC-1.png" width="70%" style="display: block; margin: auto;" /> \#\#\#Figure 3F and G
+
 ``` r
-
-
 
 dataset.ss_conc <- dataset.ss %>% filter(type == "conc", ss_status < 1e-6)
 dataset_metabolites <- dataPPP_AA$metabolites %>% reshape2::melt(id.vars = rownames())
@@ -397,7 +397,10 @@ p.ss_cor <- toPlot %>%
 grid.arrange(p.ss_cor_density, p.ss_cor, ncol=2)
 ```
 
-<embed src="Figure3_files/figure-markdown_github/steady_state_kinetics-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+<img src="Figure3_files/figure-markdown_github/steady_state_kinetics-1.png" width="70%" style="display: block; margin: auto;" />
+
+### Figure 3H
+
 ``` r
 
 ref = dataset.mca %>% filter(KO_name == "WT")
@@ -416,8 +419,7 @@ toPlot <- dataset.mca_FC %>%
   dplyr::mutate(cuts = cut(median_change_CC, breaks = c(0, 0.25, 0.5, 0.75, 1)),
                 var_type = fct_relevel(var_type, c("flux", "conc")))
   
-  
-library(ggrepel)
+
 toPlot %>% 
   ggplot(aes(x = cuts, y = n_changes + jitter)) +
     stat_boxplot(geom = "errorbar", width = 0.33) +
@@ -430,4 +432,42 @@ toPlot %>%
     theme_bw() + theme(aspect.ratio = 5/8) + coord_flip()
 ```
 
-<embed src="Figure3_files/figure-markdown_github/genes_in_parralel-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+<img src="Figure3_files/figure-markdown_github/genes_in_parralel-1.png" width="70%" style="display: block; margin: auto;" />
+
+``` r
+sessionInfo()
+#> R version 3.4.0 (2017-04-21)
+#> Platform: x86_64-apple-darwin15.6.0 (64-bit)
+#> Running under: macOS  10.13.5
+#> 
+#> Matrix products: default
+#> BLAS: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRblas.0.dylib
+#> LAPACK: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRlapack.dylib
+#> 
+#> locale:
+#> [1] C
+#> 
+#> attached base packages:
+#> [1] stats     graphics  grDevices utils     datasets  methods   base     
+#> 
+#> other attached packages:
+#>  [1] bindrcpp_0.2.2  ggrepel_0.8.0   cluster_2.0.6   gridExtra_2.3  
+#>  [5] scales_0.5.0    forcats_0.3.0   stringr_1.3.1   dplyr_0.7.6    
+#>  [9] purrr_0.2.5     readr_1.1.1     tidyr_0.8.1     tibble_1.4.2   
+#> [13] ggplot2_2.2.1   tidyverse_1.2.1
+#> 
+#> loaded via a namespace (and not attached):
+#>  [1] tidyselect_0.2.4 reshape2_1.4.3   haven_1.1.1      lattice_0.20-35 
+#>  [5] colorspace_1.3-2 htmltools_0.3.6  yaml_2.2.0       rlang_0.2.2     
+#>  [9] pillar_1.2.1     foreign_0.8-69   glue_1.3.0       modelr_0.1.1    
+#> [13] readxl_1.0.0     bindr_0.1.1      plyr_1.8.4       munsell_0.4.3   
+#> [17] gtable_0.2.0     cellranger_1.1.0 rvest_0.3.2      codetools_0.2-15
+#> [21] psych_1.8.4      evaluate_0.10.1  labeling_0.3     knitr_1.20      
+#> [25] parallel_3.4.0   broom_0.4.4      Rcpp_0.12.18     backports_1.1.2 
+#> [29] jsonlite_1.5     mnormt_1.5-5     hms_0.4.1        digest_0.6.15   
+#> [33] stringi_1.2.2    grid_3.4.0       rprojroot_1.3-2  cli_1.0.0       
+#> [37] tools_3.4.0      magrittr_1.5     lazyeval_0.2.1   crayon_1.3.4    
+#> [41] pkgconfig_2.0.1  xml2_1.2.0       lubridate_1.7.4  assertthat_0.2.0
+#> [45] rmarkdown_1.9    httr_1.3.1       rstudioapi_0.7   R6_2.2.2        
+#> [49] nlme_3.1-131.1   compiler_3.4.0
+```

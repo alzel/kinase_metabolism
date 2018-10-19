@@ -400,8 +400,9 @@ ggplot(aes(x = cor)) +
   theme(aspect.ratio = 1)
 
 ```
+
 ###Figure 1E
-```{r absolute perturbations}
+```{r absolute perturbations, fig.width=10}
 absolute_dataset <- absolute_dataset %>% mutate(isiMM904 = ORF %in% iMM904$gene)
 
 absolute_dataset.stats <- absolute_dataset %>% 
