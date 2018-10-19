@@ -29,7 +29,7 @@ fig.width = 6,
 fig.asp = 0.618,
 # 1 / phi
 fig.show = "hold",
-dev = c("pdf", "png"),
+dev = c("png", "pdf"),
 warning = F
 )
 

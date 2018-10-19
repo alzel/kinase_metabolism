@@ -463,3 +463,16 @@ figure_files = c("../../R/objects/iMM904._load_.RData",
 
 file.copy(figure_files, data_dir)
 ```
+
+
+```{r readme2}
+read_me <- c('Essential results with plots from  Zelezniak at al, Cell Systems 2018 study. 
+
+')
+
+output_dir = "./"
+file_name = paste("README", "md", sep=".")
+file_path = paste(output_dir, file_name, sep="/")
+read_me %>% write_file(file_path)
+
+```

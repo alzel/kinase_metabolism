@@ -1,13 +1,13 @@
 Figure 1 results
 ================
 Aleksej Zelezniak
-2018-10-18
+2018-10-19
 
 A Deletion of Each of the 97 Non-essential Yeast Protein Kinases Triggers Broad and Quantitatively Strong Changes in Metabolic Enzyme Expression
 
     ## Warning: package 'tidyverse' was built under R version 3.4.2
 
-    ## -- Attaching packages ------------------------------------------------------------------------------ tidyverse 1.2.1 --
+    ## -- Attaching packages ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ tidyverse 1.2.1 --
 
     ## <U+221A> ggplot2 2.2.1     <U+221A> purrr   0.2.5
     ## <U+221A> tibble  1.4.2     <U+221A> dplyr   0.7.6
@@ -26,7 +26,7 @@ A Deletion of Each of the 97 Non-essential Yeast Protein Kinases Triggers Broad 
 
     ## Warning: package 'forcats' was built under R version 3.4.3
 
-    ## -- Conflicts --------------------------------------------------------------------------------- tidyverse_conflicts() --
+    ## -- Conflicts --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- tidyverse_conflicts() --
     ## x dplyr::filter() masks stats::filter()
     ## x dplyr::lag()    masks stats::lag()
 
@@ -123,7 +123,8 @@ toPlot %>%
     scale_x_continuous(labels = scales::percent)
 ```
 
-<embed src="Figure1_files/figure-markdown_github/technicalCV-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+<img src="Figure1_files/figure-markdown_github/technicalCV-1.png" width="70%" style="display: block; margin: auto;" />
+
 ### Figure 1C
 
 ``` r
@@ -188,8 +189,7 @@ ggplot(toPlot, aes(x=B, y=avg, fill=stats)) +
   theme(legend.position = c(.66, 0.15)) 
 ```
 
-<embed src="Figure1_files/figure-markdown_github/kegg_coverages-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
-### Figure 1B
+<img src="Figure1_files/figure-markdown_github/kegg_coverages-1.png" width="70%" style="display: block; margin: auto;" /> \#\#\#Figure 1B
 
 ``` r
 coverage_thr <- 0.1 # pathway considered present if at least 10% covered
@@ -224,7 +224,8 @@ ggplot(toPlot, aes(x=stats, y=value, fill = variable)) +
   ylab("")
 ```
 
-<embed src="Figure1_files/figure-markdown_github/pack_man-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+<img src="Figure1_files/figure-markdown_github/pack_man-1.png" width="70%" style="display: block; margin: auto;" />
+
 ### Figure 1D
 
 ``` r
@@ -368,8 +369,7 @@ p.inset <- proteins.FC.f %>%
 grid.arrange(p.volcano, p.inset, ncol=2)
 ```
 
-<embed src="Figure1_files/figure-markdown_github/volcano-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
-### Figure 1F
+<img src="Figure1_files/figure-markdown_github/volcano-1.png" width="70%" style="display: block; margin: auto;" /> \#\#\#Figure 1F
 
 ``` r
 
@@ -391,7 +391,8 @@ proteins.FC.f.stats  %>%
   theme(aspect.ratio = 1 - 1/3.14)
 ```
 
-<embed src="Figure1_files/figure-markdown_github/fraction-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+<img src="Figure1_files/figure-markdown_github/fraction-1.png" width="70%" style="display: block; margin: auto;" />
+
 ### Figure 1G
 
 ``` r
@@ -403,7 +404,7 @@ transcriptome.FC <- transcriptome.FC %>% mutate(isiMM904 = ORF %in% iMM904$gene)
 transcriptome.FC.f = transcriptome.FC %>% filter(KO %in% unique(as.character(exp_metadata$ORF[exp_metadata$type == "Kinase"])))
 
 
-proteins.FC = proteins.matrix.sva.0.5.1.FC
+proteins.FC = proteins.matrix.sva.0.5.1.FC 
 tr.pr.FC = merge(transcriptome.FC, proteins.FC, by=c("KO", "ORF"), suffixes=c(".tr", ".pr"))
 
 #pval_thr = 0.01
@@ -420,8 +421,7 @@ ggplot(aes(x = cor)) +
   theme(aspect.ratio = 1)
 ```
 
-<embed src="Figure1_files/figure-markdown_github/tr_vs_pr-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
-### Figure 1E
+<img src="Figure1_files/figure-markdown_github/tr_vs_pr-1.png" width="70%" style="display: block; margin: auto;" /> \#\#\#Figure 1E
 
 ``` r
 absolute_dataset <- absolute_dataset %>% mutate(isiMM904 = ORF %in% iMM904$gene)
@@ -487,7 +487,8 @@ ggplot(toPlot, aes(x=label, y=n)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, face = "italic"), aspect.ratio = 5/8)
 ```
 
-<embed src="Figure1_files/figure-markdown_github/absolute perturbations-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+<img src="Figure1_files/figure-markdown_github/absolute perturbations-1.png" width="70%" style="display: block; margin: auto;" />
+
 ``` r
 sessionInfo()
 #> R version 3.4.0 (2017-04-21)
@@ -510,16 +511,18 @@ sessionInfo()
 #>  [9] tidyr_0.8.1     tibble_1.4.2    ggplot2_2.2.1   tidyverse_1.2.1
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] Rcpp_0.12.18     cellranger_1.1.0 pillar_1.2.1     compiler_3.4.0  
-#>  [5] plyr_1.8.4       bindr_0.1.1      tools_3.4.0      digest_0.6.15   
-#>  [9] lubridate_1.7.4  jsonlite_1.5     evaluate_0.10.1  nlme_3.1-131.1  
-#> [13] gtable_0.2.0     lattice_0.20-35  pkgconfig_2.0.1  rlang_0.2.2     
-#> [17] psych_1.8.4      cli_1.0.0        rstudioapi_0.7   yaml_2.2.0      
-#> [21] parallel_3.4.0   haven_1.1.1      xml2_1.2.0       httr_1.3.1      
-#> [25] knitr_1.20       hms_0.4.1        rprojroot_1.3-2  grid_3.4.0      
-#> [29] tidyselect_0.2.4 glue_1.3.0       R6_2.2.2         readxl_1.0.0    
-#> [33] foreign_0.8-69   rmarkdown_1.9    modelr_0.1.1     reshape2_1.4.3  
-#> [37] magrittr_1.5     backports_1.1.2  htmltools_0.3.6  rvest_0.3.2     
-#> [41] assertthat_0.2.0 mnormt_1.5-5     colorspace_1.3-2 stringi_1.2.2   
-#> [45] lazyeval_0.2.1   munsell_0.4.3    broom_0.4.4      crayon_1.3.4
+#>  [1] tidyselect_0.2.4 reshape2_1.4.3   haven_1.1.1      lattice_0.20-35 
+#>  [5] colorspace_1.3-2 htmltools_0.3.6  yaml_2.2.0       utf8_1.1.3      
+#>  [9] rlang_0.2.2      pillar_1.2.1     foreign_0.8-69   glue_1.3.0      
+#> [13] modelr_0.1.1     readxl_1.0.0     bindr_0.1.1      plyr_1.8.4      
+#> [17] munsell_0.4.3    gtable_0.2.0     cellranger_1.1.0 rvest_0.3.2     
+#> [21] codetools_0.2-15 psych_1.8.4      evaluate_0.10.1  labeling_0.3    
+#> [25] knitr_1.20       parallel_3.4.0   broom_0.4.4      Rcpp_0.12.18    
+#> [29] backports_1.1.2  limma_3.34.9     jsonlite_1.5     mnormt_1.5-5    
+#> [33] hms_0.4.1        digest_0.6.15    stringi_1.2.2    grid_3.4.0      
+#> [37] rprojroot_1.3-2  cli_1.0.0        tools_3.4.0      magrittr_1.5    
+#> [41] lazyeval_0.2.1   cluster_2.0.6    crayon_1.3.4     pkgconfig_2.0.1 
+#> [45] xml2_1.2.0       lubridate_1.7.4  assertthat_0.2.0 rmarkdown_1.9   
+#> [49] httr_1.3.1       rstudioapi_0.7   R6_2.2.2         nlme_3.1-131.1  
+#> [53] compiler_3.4.0
 ```

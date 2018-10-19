@@ -26,7 +26,7 @@ fig.width = 6,
 fig.asp = 0.618,
 # 1 / phi
 fig.show = "hold",
-dev = c("pdf", "png"),
+dev = c("png", "pdf"),
 warning = F
 )
 
@@ -383,7 +383,7 @@ transcriptome.FC <- transcriptome.FC %>% mutate(isiMM904 = ORF %in% iMM904$gene)
 transcriptome.FC.f = transcriptome.FC %>% filter(KO %in% unique(as.character(exp_metadata$ORF[exp_metadata$type == "Kinase"])))
 
 
-proteins.FC = proteins.matrix.sva.0.5.1.FC
+proteins.FC = proteins.matrix.sva.0.5.1.FC 
 tr.pr.FC = merge(transcriptome.FC, proteins.FC, by=c("KO", "ORF"), suffixes=c(".tr", ".pr"))
 
 #pval_thr = 0.01

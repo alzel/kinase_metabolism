@@ -1,13 +1,13 @@
 Figure 2 results
 ================
 Aleksej Zelezniak
-2018-10-18
+2018-10-19
 
 The Deletion of Each Yeast Kinase Triggers a Unique Reconfiguration of Enzyme Expression in the Cell
 
     ## Warning: package 'tidyverse' was built under R version 3.4.2
 
-    ## -- Attaching packages --------------------------------------------------- tidyverse 1.2.1 --
+    ## -- Attaching packages ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ tidyverse 1.2.1 --
 
     ## <U+221A> ggplot2 2.2.1     <U+221A> purrr   0.2.5
     ## <U+221A> tibble  1.4.2     <U+221A> dplyr   0.7.6
@@ -26,7 +26,7 @@ The Deletion of Each Yeast Kinase Triggers a Unique Reconfiguration of Enzyme Ex
 
     ## Warning: package 'forcats' was built under R version 3.4.3
 
-    ## -- Conflicts ------------------------------------------------------ tidyverse_conflicts() --
+    ## -- Conflicts --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- tidyverse_conflicts() --
     ## x dplyr::filter() masks stats::filter()
     ## x dplyr::lag()    masks stats::lag()
 
@@ -193,8 +193,7 @@ ggplot(toPlot) +
   labs(x="", y = "")
 ```
 
-<embed src="Figure2_files/figure-markdown_github/heatmap-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
-### Figure 2B
+<img src="Figure2_files/figure-markdown_github/heatmap-1.png" width="70%" style="display: block; margin: auto;" /> \#\#\#Figure 2B
 
 ``` r
 
@@ -247,10 +246,7 @@ ggplot() +
         axis.text.x = element_text(angle = 90, hjust = 1))
 ```
 
-<embed src="Figure2_files/figure-markdown_github/barplot-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
-### Related Figure 2C and Figure 2D
-
-All the rest plot related to C and D panels as well to Figure S8 amd Figure S9
+<img src="Figure2_files/figure-markdown_github/barplot-1.png" width="70%" style="display: block; margin: auto;" /> \#\#\#Related Figure 2C and Figure 2D All the rest plot related to C and D panels as well to Figure S8 amd Figure S9
 
 ``` r
 #data prep for similarities 
@@ -327,7 +323,8 @@ similarities_dataset %>%
 #> `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 ```
 
-<embed src="Figure2_files/figure-markdown_github/unnamed-chunk-1-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+<img src="Figure2_files/figure-markdown_github/unnamed-chunk-1-1.png" width="70%" style="display: block; margin: auto;" />
+
 Pathway co-expression
 =====================
 
@@ -467,7 +464,8 @@ ggsave(filename = paste(file_path, "pdf", sep = "."), device = "pdf", plot = p)
 #> Saving 6 x 3.71 in image
 ```
 
-<embed src="Figure2_files/figure-markdown_github/unnamed-chunk-2-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+<img src="Figure2_files/figure-markdown_github/unnamed-chunk-2-1.png" width="70%" style="display: block; margin: auto;" />
+
 ``` r
 pathway_similarities$sorted_pair <- apply(pathway_similarities[ ,c("X1", "X2")] , 1 , 
                                           FUN = function(x) {
@@ -503,8 +501,8 @@ toPlot %>%
     theme(legend.position = c(0.1, 0.5), aspect.ratio = 5/8)  
 ```
 
-<embed src="Figure2_files/figure-markdown_github/no_frequent_pairs-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
-<embed src="Figure2_files/figure-markdown_github/no_frequent_pairs-2.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+<img src="Figure2_files/figure-markdown_github/no_frequent_pairs-1.png" width="70%" style="display: block; margin: auto;" /><img src="Figure2_files/figure-markdown_github/no_frequent_pairs-2.png" width="70%" style="display: block; margin: auto;" />
+
 ``` r
 sessionInfo()
 #> R version 3.4.0 (2017-04-21)
@@ -530,16 +528,27 @@ sessionInfo()
 #> [16] tidyverse_1.2.1   
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] tidyselect_0.2.4 haven_1.1.1      lattice_0.20-35  colorspace_1.3-2
-#>  [5] htmltools_0.3.6  yaml_2.2.0       rlang_0.2.2      pillar_1.2.1    
-#>  [9] foreign_0.8-69   glue_1.3.0       modelr_0.1.1     readxl_1.0.0    
-#> [13] bindr_0.1.1      plyr_1.8.4       munsell_0.4.3    gtable_0.2.0    
-#> [17] cellranger_1.1.0 rvest_0.3.2      psych_1.8.4      evaluate_0.10.1 
-#> [21] knitr_1.20       parallel_3.4.0   broom_0.4.4      Rcpp_0.12.18    
-#> [25] backports_1.1.2  jsonlite_1.5     mnormt_1.5-5     hms_0.4.1       
-#> [29] digest_0.6.15    stringi_1.2.2    grid_3.4.0       rprojroot_1.3-2 
-#> [33] cli_1.0.0        tools_3.4.0      magrittr_1.5     lazyeval_0.2.1  
-#> [37] crayon_1.3.4     pkgconfig_2.0.1  xml2_1.2.0       lubridate_1.7.4 
-#> [41] assertthat_0.2.0 rmarkdown_1.9    httr_1.3.1       rstudioapi_0.7  
-#> [45] R6_2.2.2         nlme_3.1-131.1   compiler_3.4.0
+#>  [1] viridis_0.5.0     httr_1.3.1        viridisLite_0.3.0
+#>  [4] jsonlite_1.5      modelr_0.1.1      assertthat_0.2.0 
+#>  [7] stats4_3.4.0      cellranger_1.1.0  yaml_2.2.0       
+#> [10] robustbase_0.92-8 pillar_1.2.1      backports_1.1.2  
+#> [13] lattice_0.20-35   glue_1.3.0        limma_3.34.9     
+#> [16] digest_0.6.15     rvest_0.3.2       colorspace_1.3-2 
+#> [19] htmltools_0.3.6   plyr_1.8.4        psych_1.8.4      
+#> [22] pkgconfig_2.0.1   broom_0.4.4       haven_1.1.1      
+#> [25] mvtnorm_1.0-7     whisker_0.3-2     nnet_7.3-12      
+#> [28] lazyeval_0.2.1    cli_1.0.0         mnormt_1.5-5     
+#> [31] magrittr_1.5      crayon_1.3.4      readxl_1.0.0     
+#> [34] mclust_5.4        evaluate_0.10.1   nlme_3.1-131.1   
+#> [37] MASS_7.3-49       xml2_1.2.0        foreign_0.8-69   
+#> [40] class_7.3-14      tools_3.4.0       hms_0.4.1        
+#> [43] trimcluster_0.1-2 kernlab_0.9-25    munsell_0.4.3    
+#> [46] fpc_2.1-11        compiler_3.4.0    rlang_0.2.2      
+#> [49] grid_3.4.0        rstudioapi_0.7    labeling_0.3     
+#> [52] rmarkdown_1.9     gtable_0.2.0      codetools_0.2-15 
+#> [55] flexmix_2.3-14    R6_2.2.2          lubridate_1.7.4  
+#> [58] knitr_1.20        prabclus_2.2-6    bindr_0.1.1      
+#> [61] rprojroot_1.3-2   dendextend_1.7.0  modeltools_0.2-21
+#> [64] stringi_1.2.2     parallel_3.4.0    Rcpp_0.12.18     
+#> [67] DEoptimR_1.0-8    tidyselect_0.2.4  diptest_0.75-7
 ```

@@ -1,13 +1,13 @@
 Figure 4 results
 ================
 Aleksej Zelezniak
-2018-10-18
+2018-10-19
 
 Multiple Linear Regression Identifies Multivariate Metabolite-Enzyme Relationships That Are Informative about Metabolite Concentration
 
     ## Warning: package 'tidyverse' was built under R version 3.4.2
 
-    ## -- Attaching packages ------------------------------------------------------------------------------ tidyverse 1.2.1 --
+    ## -- Attaching packages ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ tidyverse 1.2.1 --
 
     ## <U+221A> ggplot2 2.2.1     <U+221A> purrr   0.2.5
     ## <U+221A> tibble  1.4.2     <U+221A> dplyr   0.7.6
@@ -26,7 +26,7 @@ Multiple Linear Regression Identifies Multivariate Metabolite-Enzyme Relationshi
 
     ## Warning: package 'forcats' was built under R version 3.4.3
 
-    ## -- Conflicts --------------------------------------------------------------------------------- tidyverse_conflicts() --
+    ## -- Conflicts --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- tidyverse_conflicts() --
     ## x dplyr::filter() masks stats::filter()
     ## x dplyr::lag()    masks stats::lag()
 
@@ -143,7 +143,8 @@ toPlot %>%
     ylab("Explained variance of metabolite concentrations\nusing proteome data, adj. R2")
 ```
 
-<embed src="Figure4_files/figure-markdown_github/unnamed-chunk-1-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+<img src="Figure4_files/figure-markdown_github/unnamed-chunk-1-1.png" width="70%" style="display: block; margin: auto;" />
+
 ### Related to Figure 4B and Figure S15
 
 ``` r
@@ -171,7 +172,8 @@ ggplot() +
                        labels = c("negative", "positive") )
 ```
 
-<embed src="Figure4_files/figure-markdown_github/predictors_mlr-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+<img src="Figure4_files/figure-markdown_github/predictors_mlr-1.png" width="70%" style="display: block; margin: auto;" />
+
 ``` r
 
 
@@ -198,7 +200,8 @@ ggplot(prediction.intervals) +
   theme(aspect.ratio = 1)
 ```
 
-<embed src="Figure4_files/figure-markdown_github/unnamed-chunk-2-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+<img src="Figure4_files/figure-markdown_github/unnamed-chunk-2-1.png" width="70%" style="display: block; margin: auto;" />
+
 ### Figure 4G
 
 ``` r
@@ -268,7 +271,8 @@ ggplot() +
   theme( legend.position = c(0.7,0.7))
 ```
 
-<embed src="Figure4_files/figure-markdown_github/BRENDA-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+<img src="Figure4_files/figure-markdown_github/BRENDA-1.png" width="70%" style="display: block; margin: auto;" />
+
 ### Figure 4F
 
 ``` r
@@ -289,7 +293,8 @@ ggplot(toPlot, aes(x = isPredictor, y = log(ratio,2))) +
  theme(aspect.ratio = 8/3)
 ```
 
-<embed src="Figure4_files/figure-markdown_github/violin_boxplot-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+<img src="Figure4_files/figure-markdown_github/violin_boxplot-1.png" width="70%" style="display: block; margin: auto;" />
+
 ### Figure 4H
 
 ``` r
@@ -358,5 +363,4 @@ toPlot %>%
           axis.ticks.y = element_blank())
 ```
 
-<embed src="Figure4_files/figure-markdown_github/AA_saturation-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
-<embed src="Figure4_files/figure-markdown_github/AA_saturation-2.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+<img src="Figure4_files/figure-markdown_github/AA_saturation-1.png" width="70%" style="display: block; margin: auto;" /><img src="Figure4_files/figure-markdown_github/AA_saturation-2.png" width="70%" style="display: block; margin: auto;" />

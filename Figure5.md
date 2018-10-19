@@ -1,13 +1,13 @@
 Figure 5 results
 ================
 Aleksej Zelezniak
-2018-10-18
+2018-10-19
 
 Machine Learning Regression Predicts the Concentration of Metabolite Pools from Enzyme Abundance
 
     ## Warning: package 'tidyverse' was built under R version 3.4.2
 
-    ## -- Attaching packages --------------------------------------------------- tidyverse 1.2.1 --
+    ## -- Attaching packages ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ tidyverse 1.2.1 --
 
     ## <U+221A> ggplot2 2.2.1     <U+221A> purrr   0.2.5
     ## <U+221A> tibble  1.4.2     <U+221A> dplyr   0.7.6
@@ -26,7 +26,7 @@ Machine Learning Regression Predicts the Concentration of Metabolite Pools from 
 
     ## Warning: package 'forcats' was built under R version 3.4.3
 
-    ## -- Conflicts ------------------------------------------------------ tidyverse_conflicts() --
+    ## -- Conflicts --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- tidyverse_conflicts() --
     ## x dplyr::filter() masks stats::filter()
     ## x dplyr::lag()    masks stats::lag()
 
@@ -58,12 +58,20 @@ load("./data/iMM904._load_.RData")
 #experiment metadata
 load("./data/exp_metadata._clean_.RData")
 
-#caret models
+#models
 load("./data/all_final_models.models_summary2.RData")
 load("./data/file.list.models_summary2.RData")
 
 #ID maps
-metabolite.order <- read.delim("./data/metabolites.txt")
+metabolite.order <- read_delim("./data/metabolites.txt", delim = "\t")
+#> Parsed with column specification:
+#> cols(
+#>   met_name = col_character(),
+#>   metabolite = col_character(),
+#>   pathway = col_character(),
+#>   method = col_character(),
+#>   Order = col_integer()
+#> )
 load("./data/metabolite2iMM904._load_.RData")
 load("./data/gene.annotations._load_.RData")
 load("./data/orf2name._clean_.RData")
@@ -120,8 +128,7 @@ toPlot %>%
           panel.grid = element_blank())
 ```
 
-<embed src="Figure5_files/figure-markdown_github/R2_barplot-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
-### Figure 5B
+<img src="Figure5_files/figure-markdown_github/R2_barplot-1.png" width="70%" style="display: block; margin: auto;" /> \#\#\#Figure 5B
 
 ``` r
 toPlot.points <- toPlot %>% 
@@ -143,4 +150,4 @@ toPlot %>%
   
 ```
 
-<embed src="Figure5_files/figure-markdown_github/distance-1.pdf" width="70%" style="display: block; margin: auto;" type="application/pdf" />
+<img src="Figure5_files/figure-markdown_github/distance-1.png" width="70%" style="display: block; margin: auto;" />
