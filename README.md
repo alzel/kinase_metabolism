@@ -5,7 +5,7 @@ Code repository for reproducing main analyses and figures of the study
 
 ## Viewing code and results
 Main results presented in R notebooks with corresponding analyses are named FigureN.Rmd where N is figure number as per manuscript.
-To view rendered figures directly on github, simply open on FigureN.md.
+To view rendered figures directly on github, simply open FigureN.md.
 
 ## To download code with data
 Clone the repository from the command line:
@@ -17,12 +17,9 @@ Open in Rstudio and run the corresponding analyses.
 
 ## Dependencies
 
-Most of the figure files plots should work solely with `tidyverse` package. 
+Most of the R notebook code chunks should work solely using `tidyverse` package. 
 There are however places where additional functions called from the following packages: `gridExtra, reshape2, RColorBrewer, ggthemes, cluster, ggrepel`.
-Please see `sessionInfo()` output in the end each FigureN.md for more information.
+Please see `sessionInfo()` output at the end each FigureN.md for more information.
 
-If you have additional questions please contact me via email. 
+If you have additional questions please contact me via email or best if you open an issue directly on github.
 You can find my email on our group's research page: http://www.zelezniaklab.org
-
-
-
